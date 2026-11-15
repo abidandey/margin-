@@ -3,6 +3,7 @@ import type { MissionDebrief } from './missionSimulation'
 export function getRetryFocus(debrief: MissionDebrief): { category: 'instrument' | 'power' | 'battery' | 'propulsion' | 'communications'; title: string; text: string } {
   const eclipse = debrief.eventResults.find(event => event.type === 'eclipse')
   const category = !debrief.telemetry.orbitAchieved ? 'propulsion'
+    : !debrief.objectives.primary.complete ? 'instrument'
     : eclipse && eclipse.healthDelta < 0 ? debrief.design.batteryName ? 'power' : 'battery'
     : debrief.telemetry.dataCollectedPoints > 0 && debrief.telemetry.dataReturnedPoints / debrief.telemetry.dataCollectedPoints < 0.6 ? 'communications' : 'instrument'
   const takeaway = getReviewTakeaway(debrief)
@@ -25,6 +26,15 @@ export function getReviewTakeaway(debrief: MissionDebrief) {
   if (!debrief.telemetry.orbitAchieved && insertion) return {
     cause: `Your engine reserve and burn choice left ${Math.round(insertion.deltaVShortfallMps)} m/s missing, preventing lunar orbit.`,
     recommendation: 'Choose the higher-reserve bipropellant engine; check the mass and budget limits.',
+  }
+  if (!debrief.objectives.primary.complete) {
+    const observation = debrief.eventResults.find(event => event.type === 'science')
+    return {
+      cause: 'Your payload, available power and observation response did not meet the primary evidence threshold.',
+      recommendation: observation?.choiceId !== 'target-ice' ? 'Keep the payload and choose “Investigate ice clues” on the next pass.'
+        : debrief.scienceSynthesis.evidenceModalities.length < 2 ? 'Add a complementary measurement type to your payload, such as hydrogen plus thermal.'
+        : 'Reduce spacecraft power demand in the builder to leave more power for observations.',
+    }
   }
   if (eclipse && eclipse.healthDelta < 0) return {
     cause: `Generation, battery discharge and your eclipse response left ${Math.round(eclipse.eclipsePowerFlow?.shortfallW ?? 0)} W unmet in shadow.`,

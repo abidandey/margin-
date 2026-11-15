@@ -18,10 +18,17 @@ test('replay distinguishes improvement, no change, regression and mixed tradeoff
   assert.equal(compareMissionRuns(baseline, { ...changed({}), result: 'Failure' }), 'Worse')
 })
 test('eclipse retry explains combined causes and suggests a response before replacing an installed battery', () => {
-  const debrief = { telemetry: { orbitAchieved: true }, design: { batteryName: 'High-density battery' }, eventResults: [
+  const debrief = { objectives: { primary: { complete: true } }, telemetry: { orbitAchieved: true }, design: { batteryName: 'High-density battery' }, eventResults: [
     { type: 'eclipse', choiceId: 'full-science', healthDelta: -22, eclipsePowerFlow: { shortfallW: 221 } },
   ] }
   assert.match(getReviewTakeaway(debrief).cause, /221 W/)
   assert.match(getReviewTakeaway(debrief).recommendation, /hibernating/)
   assert.equal(getRetryFocus(debrief).category, 'power')
+})
+
+test('missing primary evidence takes priority over secondary eclipse damage', () => {
+  const debrief = { objectives: { primary: { complete: false } }, telemetry: { orbitAchieved: true },
+    eventResults: [{ type: 'science', choiceId: 'stand-down' }, { type: 'eclipse', healthDelta: -10 }] }
+  assert.match(getReviewTakeaway(debrief).recommendation, /Investigate ice clues/)
+  assert.equal(getRetryFocus(debrief).category, 'instrument')
 })
