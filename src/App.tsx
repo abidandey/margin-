@@ -507,12 +507,12 @@ function App() {
                 <div className="metric-heading"><span>SUNLIT POWER</span><span className={powerMargin < 0 ? 'over-limit' : ''}>{totals.draw} <small>/ {totals.output} W · {formatMargin(powerMargin, 'W')}</small></span></div>
                 <div className="meter"><span className={powerMargin < 0 ? 'meter-over' : ''} style={{ width: `${totals.output ? Math.min((totals.draw / totals.output) * 100, 100) : 0}%` }} /></div>
               </div>
-              <div className="metric" title="Eclipse power compares the spacecraft load with what is available in a full eclipse: generator eclipse output plus the battery's discharge limit, in watts.">
-                <div className="metric-heading"><span>ECLIPSE POWER</span><span className={eclipse.powerShortfallW > 0 ? 'over-limit' : ''}>{eclipse.demandW} <small>/ {eclipse.powerAvailableW} W · {eclipse.generationW} W GEN + {evaluation.batteryDischargeLimitW} W BATT</small></span></div>
+              <div className="metric" title={`Power needed in a full eclipse against power available: ${eclipse.generationW} W from the generator plus ${evaluation.batteryDischargeLimitW} W battery discharge limit.`}>
+                <div className="metric-heading"><span>ECLIPSE POWER</span><span className={eclipse.powerShortfallW > 0 ? 'over-limit' : ''}><small>NEED</small> {eclipse.demandW} W <small>· HAVE</small> {eclipse.powerAvailableW} W</span></div>
                 <div className="meter"><span className={eclipse.powerShortfallW > 0 ? 'meter-over' : ''} style={{ width: `${eclipse.powerAvailableW ? Math.min((eclipse.demandW / eclipse.powerAvailableW) * 100, 100) : 100}%` }} /></div>
               </div>
-              <div className="metric" title="Eclipse energy compares the watt-hours the battery must supply over the 0.5 hour reference eclipse with the watt-hours it stores.">
-                <div className="metric-heading"><span>ECLIPSE ENERGY</span><span className={eclipse.energyShortfallWh > 0 ? 'over-limit' : ''}>{eclipse.energyNeededWh} <small>/ {eclipse.energyAvailableWh} Wh · {eclipse.hours} H{evaluation.batteryCapacityWh > 0 ? '' : ' · NO BATTERY'}</small></span></div>
+              <div className="metric" title={`Energy the battery must supply over the ${eclipse.hours} hour reference eclipse against the energy it stores${evaluation.batteryCapacityWh > 0 ? '' : ' (no battery fitted)'}.`}>
+                <div className="metric-heading"><span>ECLIPSE ENERGY</span><span className={eclipse.energyShortfallWh > 0 ? 'over-limit' : ''}><small>NEED</small> {eclipse.energyNeededWh} Wh <small>· HAVE</small> {eclipse.energyAvailableWh} Wh</span></div>
                 <div className="meter"><span className={eclipse.energyShortfallWh > 0 ? 'meter-over' : ''} style={{ width: `${eclipse.energyAvailableWh ? Math.min((eclipse.energyNeededWh / eclipse.energyAvailableWh) * 100, 100) : eclipse.energyNeededWh > 0 ? 100 : 0}%` }} /></div>
               </div>
               <div className="metric" title="Budget margin is the mission budget still available before reaching $2.40M.">

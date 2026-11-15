@@ -4426,3 +4426,12 @@
   margin-left: 0;
   color: var(--quiet);
 }
+
+/* ---- Builder side panel: the diagram's part list needs two columns to stay readable ---- */
+.mission-summary .schematic-component-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mission-summary .schematic-component-list strong {
+  overflow-wrap: break-word;
+}
