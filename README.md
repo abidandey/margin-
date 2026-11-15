@@ -27,7 +27,7 @@ No account or installation is required to play the published browser version. Th
 | Stage | Player experience |
 | --- | --- |
 | **1 · Brief** | Investigate possible water ice at the lunar south pole. Bonus goals include crater-rim terrain mapping and returning more science data. |
-| **2 · Build** | Select **one or two** science instruments plus power, propulsion, and communications systems. Watch mass, power, and cost update against hard limits. Inspect the illustrative spacecraft in an interactive 3D view. |
+| **2 · Build** | Select **one or two** science instruments plus a power generator, optional battery storage, propulsion, and communications systems. Watch mass, power, and cost update against hard limits. Inspect the illustrative spacecraft in an interactive 3D view. |
 | **3 · Launch** | Compare three dates using **cached NASA/JPL Horizons Earth–Moon distance and light-time**. Propulsion penalties are separately labeled as illustrative game assumptions. |
 | **4 · Fly** | Run a compressed **75-second**, five-phase mission with four seeded events. Make engineering decisions with competing advice from a scientist, systems engineer, and finance lead. |
 | **5 · Review** | Examine science, reliability, budget, and margins; inspect an event timeline, subsystem effects, and explanations of why the mission succeeded or failed. |
@@ -127,6 +127,7 @@ The generated site can be previewed with `npm run preview`. GitHub Pages deploym
 | `src/missionSimulation.ts` | Seeded scenario, engineering decisions, mission state, scoring, and debrief |
 | `src/scienceData.ts`, `src/data/` | NASA instrument references, illustrative science profiles, and cached Horizons observations |
 | `src/MissionViews.tsx` | Live mission and review interfaces |
+| `src/spacecraftDesign.ts` | Component catalogue and design checks; power generation (W) is separate from battery storage (Wh) and discharge limit (W) |
 | `src/ReviewBoard.tsx` | Selectable event timeline and cause-and-effect review |
 | `src/TelemetryHistory.tsx` | Health, science, and battery telemetry over mission time |
 | `src/Lunar3DExperience.tsx`, `src/Lunar3DPanel.tsx` | Lazily loaded 3D Moon and interactive spacecraft visualization |
@@ -150,7 +151,7 @@ The game presents numerical values alongside resource gauges, uses text labels a
 This project was developed with AI-assisted research, planning, writing, and coding. Human team members selected the concept and made the game-design and submission decisions.
 
 - **GitHub Copilot:** Iterative assistance with React/TypeScript implementation, the simulation, UI, integration, and automated testing.
-- **Claude (Anthropic):** Assistance with Failure Review Board and telemetry visualizations, 3D presentation changes, GitHub Pages deployment configuration, and an earlier README draft.
+- **Claude (Anthropic):** Assistance with Failure Review Board and telemetry visualizations, 3D presentation changes, GitHub Pages deployment configuration, the power-architecture module and its regression tests, and an earlier README draft.
 - **ChatGPT (OpenAI):** Concept refinement, NASA research interpretation, testing and debugging guidance, review of simulation logic, and README documentation.
 
 These disclosures describe assistance, not authorship of NASA data. Refer to the project source and revision history for implementation details.

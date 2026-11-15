@@ -29,7 +29,15 @@ export type MissionDesign = {
   instrumentNames: string[]
   powerId: string
   powerName: string
+  /** Power the generator still produces during a full eclipse, W. Solar: 0. Radioisotope: its rated output. */
+  eclipseGenerationW: number
+  batteryId: string
+  /** Null when no battery is installed. */
+  batteryName: string | null
+  /** Energy the battery stores when full, Wh. A battery stores energy; it never generates it. */
   batteryEnergyCapacityWh: number
+  /** Highest power the battery can deliver, W. */
+  batteryDischargeLimitW: number
   propulsionId: string
   propulsionName: string
   communicationsId: string
@@ -104,7 +112,7 @@ export const SIMULATION_ASSUMPTIONS = [
   'Mission time is compressed to 75 seconds, split into five 15-second phases; decisions pause the clock.',
   'A seeded generator creates event severity and the order of the two South Pole Science events. The scenario is generated without spacecraft configuration.',
   'Illustrative Δv reserves are 420 m/s for cold-gas thrusters, 760 m/s for the bipropellant orbital engine, and 560 m/s for electric microthrusters. The chosen launch-window penalty is deducted from this reserve. Nominal insertion uses the seeded requirement; conserve uses max(120 m/s, requirement − 80 m/s); precision uses requirement + 60 m/s. An insertion shortfall subtracts 28 health points and prevents orbital observations. Successful insertion adds 4, 10, or 12 science points for conserve, nominal, or precision respectively.',
-  'The illustrative full eclipse lasts 0.5 hours. Solar-array generation is 0 W during it; the radioisotope generator supplies its rated 320 W. The illustrative battery stores 480 Wh and can discharge at up to its rated 240 W, with energy used equal to supplied W × eclipse hours. Eclipse demand is spacecraft load after shedding plus the seeded extra load; unused solar headroom is not counted. A shortfall causes min(25, 10 + ceil(shortfall / 20)) health-point damage. Low-power mode sheds 80 W; hibernation powers down the selected science instruments and sheds their combined illustrative draw. They remain off until a targeted science or mapping response explicitly restores them; restored instrument loads are included in spacecraft power demand. W, Wh and hours are separate quantities; all values are illustrative game assumptions.',
+  'The illustrative full eclipse lasts 0.5 hours. Solar-array generation is 0 W during it; the radioisotope generator supplies its rated 320 W. A battery is optional storage carried alongside a generator, never a power source on its own: the illustrative battery stores 480 Wh and can discharge at up to its rated 240 W, with energy used equal to supplied W × eclipse hours. The mission has one eclipse, so in-flight recharging is not simulated; the builder checks that a generator leaves surplus power to recharge it. Eclipse demand is spacecraft load after shedding plus the seeded extra load; unused solar headroom is not counted. A shortfall causes min(25, 10 + ceil(shortfall / 20)) health-point damage. Low-power mode sheds 80 W; hibernation powers down the selected science instruments and sheds their combined illustrative draw. They remain off until a targeted science or mapping response explicitly restores them; restored instrument loads are included in spacecraft power demand. W, Wh and hours are separate quantities; all values are illustrative game assumptions.',
   'Illustrative link recovery windows are 24 seconds for X-band, 18 seconds for UHF, and 12 seconds for optical laser. Reacquire returns the link profile fraction when within the window and 45% of that fraction otherwise; buffer uses its profile fraction; reduced-rate returns 45%. These are game rules, not measured hardware performance.',
   'Instrument mass, power, cost, science yields, and evidence points are illustrative game values. NASA source links describe real instrument identities and capabilities only. If available power is below an event’s observation requirement, target/map yields are multiplied by 55%; those shortfalls also reduce health by 5/3 points respectively.',
   'Hydrogen, thermal, ultraviolet, and radar observations are separate evidence types. A potential water-ice candidate requires at least two distinct water-relevant evidence types and the illustrative point threshold. Neither a score nor any single observation confirms extractable water ice.',
@@ -442,9 +450,11 @@ function calculateEclipsePowerFlow(
     design.powerLoadW - telemetry.powerReliefW - hibernatedInstrumentLoadW - additionalLoadShedW,
   )
     + event.extraPowerW
-  const generationW = design.powerId === 'rtg' ? design.powerCapacityW : 0
+  // Generation and storage are separate equipment. In a full eclipse only the generator's eclipse
+  // output counts as generation; the battery adds discharge, limited by both its W limit and its Wh.
+  const generationW = design.eclipseGenerationW
   const batteryEnergyBeforeWh = telemetry.batteryEnergyRemainingWh
-  const batteryDischargeLimitW = design.powerId === 'battery' ? design.powerCapacityW : 0
+  const batteryDischargeLimitW = design.batteryEnergyCapacityWh > 0 ? design.batteryDischargeLimitW : 0
   const batteryEnergyLimitedPowerW = event.durationHours > 0
     ? batteryEnergyBeforeWh / event.durationHours
     : 0
@@ -580,7 +590,7 @@ function resolveEvent(state: MissionState, event: MissionEvent, choice: MissionC
     if (powerFlow.shortfallW > 0) {
       healthDelta = -Math.min(25, 10 + Math.ceil(powerFlow.shortfallW / 20))
     }
-    const energyOutcome = state.design.powerId === 'battery'
+    const energyOutcome = state.design.batteryEnergyCapacityWh > 0
       ? `${Math.round(powerFlow.batteryEnergyUsedWh)} Wh of stored energy was used; ${Math.round(powerFlow.batteryEnergyRemainingWh)} Wh remains.`
       : '0 Wh of stored battery energy was available (no battery installed).'
     outcome = `During the ${powerFlow.durationHours} h illustrative full eclipse, demand was ${Math.round(powerFlow.demandW)} W and generation supplied ${Math.round(powerFlow.generationW)} W; battery discharge supplied ${Math.round(powerFlow.batteryDischargeW)} W. Power shortfall was ${Math.round(powerFlow.shortfallW)} W. ${energyOutcome}${scienceDelta > 0 ? ` ${scienceDelta} science points were collected.` : ' No eclipse science reward was earned.'}${healthDelta < 0 ? ` Spacecraft health fell by ${Math.abs(healthDelta)} points.` : ''}`
@@ -595,7 +605,7 @@ function resolveEvent(state: MissionState, event: MissionEvent, choice: MissionC
     })
     causalFactors = [
       `Full-eclipse demand was ${Math.round(powerFlow.demandW)} W for ${powerFlow.durationHours} h after ${Math.round(eventLoadShedW)} W of load shedding${hibernatedLoadShedW > 0 ? `, including ${Math.round(hibernatedLoadShedW)} W from hibernated science instruments` : ''}; instantaneous solar generation is 0 W in eclipse.`,
-      `The ${state.design.powerName} supplied ${Math.round(powerFlow.generationW)} W generation plus ${Math.round(powerFlow.batteryDischargeW)} W battery discharge, leaving a ${Math.round(powerFlow.shortfallW)} W shortfall.`,
+      `The ${state.design.powerName} supplied ${Math.round(powerFlow.generationW)} W generation and ${state.design.batteryName ? `the ${state.design.batteryName} supplied` : 'no battery was installed, so there was'} ${Math.round(powerFlow.batteryDischargeW)} W battery discharge, leaving a ${Math.round(powerFlow.shortfallW)} W shortfall.`,
       `${Math.round(powerFlow.batteryEnergyBeforeWh)} Wh stored before the eclipse; ${Math.round(powerFlow.batteryEnergyUsedWh)} Wh used and ${Math.round(powerFlow.batteryEnergyRemainingWh)} Wh remain. Battery capacity and duration are illustrative.`,
     ]
   } else if (event.type === 'science') {
@@ -915,7 +925,7 @@ export function calculateMissionDebrief(state: MissionState): MissionDebrief {
   if (design.powerMarginW < 80 || telemetry.health < 70) {
     recommendations.push({
       objective: 'Engineering — power and health',
-      text: `Increase power headroom with a higher-output power option or shed payload load before the polar eclipse. Recorded margin: ${Math.round(finalPowerMarginW)} W; spacecraft health: ${reliability}/100.`,
+      text: `Increase power headroom with a higher-output generator, add a battery to carry loads through the eclipse, or shed payload load before it. Recorded margin: ${Math.round(finalPowerMarginW)} W; spacecraft health: ${reliability}/100.`,
     })
   }
   if (telemetry.orbitAchieved && telemetry.deltaVRemainingMps < 100) {

@@ -6,7 +6,6 @@ import {
   getNextMissionSeed,
   missionReducer,
   type MissionDebrief,
-  type MissionDesign,
 } from './missionSimulation'
 import {
   LUNAR_SCIENCE_DATA,
@@ -14,25 +13,32 @@ import {
   type ScienceInstrument,
   type ScienceInstrumentId,
 } from './scienceData'
+import {
+  BUDGET_LIMIT,
+  COMPONENT_OPTIONS as options,
+  DEFAULT_SELECTION,
+  MASS_LIMIT,
+  MAX_SCIENCE_INSTRUMENTS,
+  MIN_SCIENCE_INSTRUMENTS,
+  NO_BATTERY_ID,
+  evaluateDesign,
+  toMissionDesign,
+  type ComponentCategory,
+  type ComponentOption,
+  type ComponentSelection,
+} from './spacecraftDesign'
 import horizonsCache from './data/horizons2027.json'
 import { SpacecraftSchematic } from './MissionVisuals'
 import type { Lunar3DPart } from './lunar3dTypes'
 import type { MissionSubsystem } from './missionSubsystems'
 import './App.css'
 
-type Category = 'instrument' | 'power' | 'propulsion' | 'communications'
-type NonInstrumentCategory = Exclude<Category, 'instrument'>
+type Category = 'instrument' | ComponentCategory
+type NonInstrumentCategory = ComponentCategory
 
-type ComponentOption = {
-  id: string
-  name: string
-  description: string
-  mass: number
-  cost: number
-  draw: number
-  output?: number
-  storageWh?: number
-}
+const COMPONENT_CATEGORIES = ['power', 'battery', 'propulsion', 'communications'] as const
+// The battery is part of the power subsystem in the diagrams and the 3D view.
+const subsystemOf = (category: NonInstrumentCategory): MissionSubsystem => (category === 'battery' ? 'power' : category)
 
 type InstrumentOption = ComponentOption & { facts: ScienceInstrument }
 
@@ -48,9 +54,10 @@ type LaunchWindow = {
 
 const categories: { id: Category; title: string; eyebrow: string }[] = [
   { id: 'instrument', title: 'Science instrument', eyebrow: '01 / PAYLOAD' },
-  { id: 'power', title: 'Power system', eyebrow: '02 / ENERGY' },
-  { id: 'propulsion', title: 'Propulsion', eyebrow: '03 / MOBILITY' },
-  { id: 'communications', title: 'Communications', eyebrow: '04 / TELEMETRY' },
+  { id: 'power', title: 'Power generation', eyebrow: '02 / GENERATION' },
+  { id: 'battery', title: 'Energy storage', eyebrow: '03 / STORAGE' },
+  { id: 'propulsion', title: 'Propulsion', eyebrow: '04 / MOBILITY' },
+  { id: 'communications', title: 'Communications', eyebrow: '05 / TELEMETRY' },
 ]
 
 const instrumentOptions: InstrumentOption[] = LUNAR_SCIENCE_DATA.instruments.map((instrument) => {
@@ -66,35 +73,7 @@ const instrumentOptions: InstrumentOption[] = LUNAR_SCIENCE_DATA.instruments.map
   }
 })
 
-const options: Record<NonInstrumentCategory, ComponentOption[]> = {
-  power: [
-    { id: 'solar', name: 'Deployable solar array', description: 'Fold-out panels optimized for low-angle light.', mass: 22, cost: 340, draw: 0, output: 500 },
-    { id: 'rtg', name: 'Radioisotope generator', description: 'Steady output through long polar shadows.', mass: 31, cost: 690, draw: 0, output: 320 },
-    { id: 'battery', name: 'High-density battery', description: 'Compact storage for short-duration sorties.', mass: 18, cost: 260, draw: 0, output: 240, storageWh: 480 },
-  ],
-  propulsion: [
-    { id: 'cold-gas', name: 'Cold-gas thrusters', description: 'Precise, low-complexity orbital adjustments.', mass: 25, cost: 420, draw: 80 },
-    { id: 'bipropellant', name: 'Bipropellant orbital engine', description: 'Provide thrust for lunar orbit insertion and orbital maneuvers.', mass: 38, cost: 640, draw: 60 },
-    { id: 'electric', name: 'Electric microthrusters', description: 'Efficient, fine-tuned station keeping.', mass: 19, cost: 510, draw: 140 },
-  ],
-  communications: [
-    { id: 'x-band', name: 'X-band high-gain dish', description: 'Reliable long-range data to Earth.', mass: 12, cost: 220, draw: 70 },
-    { id: 'uhf', name: 'UHF relay link', description: 'Robust low-power link to a lunar relay.', mass: 8, cost: 160, draw: 45 },
-    { id: 'laser', name: 'Optical laser terminal', description: 'High-bandwidth science data return.', mass: 15, cost: 390, draw: 110 },
-  ],
-}
-
-const defaults: Record<NonInstrumentCategory, string> = {
-  power: 'solar',
-  propulsion: 'cold-gas',
-  communications: 'x-band',
-}
-
 const DEFAULT_INSTRUMENT_IDS: ScienceInstrumentId[] = ['LEND', 'DIVINER']
-const MAX_SCIENCE_INSTRUMENTS = 2
-const MIN_SCIENCE_INSTRUMENTS = 1
-const MASS_LIMIT = 150
-const BUDGET_LIMIT = 2400
 
 const launchWindowOptions = [
   {
@@ -187,8 +166,14 @@ function NonInstrumentOptionGrid({
             <span className="option-stats">
               <span>{option.mass} <small>KG · ILLUSTRATIVE</small></span>
               <span>
-                {option.output !== undefined ? `${option.output} W ${option.storageWh === undefined ? 'OUT' : 'MAX DISCHARGE'}` : `${option.draw} W`}
-                {' '}<small>ILLUSTRATIVE{option.storageWh !== undefined ? ` · ${option.storageWh} Wh STORAGE` : ''}</small>
+                {option.output !== undefined
+                  ? `${option.output} W SUNLIT · ${option.eclipseOutput ?? 0} W ECLIPSE`
+                  : option.storageWh !== undefined
+                    ? `${option.storageWh} Wh STORED · ${option.maxDischargeW ?? 0} W MAX DISCHARGE`
+                    : categoryId === 'battery'
+                      ? '0 Wh STORED'
+                      : `${option.draw} W`}
+                {' '}<small>ILLUSTRATIVE</small>
               </span>
             </span>
           </label>
@@ -200,7 +185,7 @@ function NonInstrumentOptionGrid({
 
 function App() {
   const [screen, setScreen] = useState<'briefing' | 'builder' | 'launch' | 'ready' | 'simulation' | 'review'>('briefing')
-  const [selection, setSelection] = useState(defaults)
+  const [selection, setSelection] = useState<ComponentSelection>(DEFAULT_SELECTION)
   const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<ScienceInstrumentId[]>(DEFAULT_INSTRUMENT_IDS)
   const [highlightedSubsystem, setHighlightedSubsystem] = useState<MissionSubsystem>('science')
   const [highlightedPartId, setHighlightedPartId] = useState<string>(DEFAULT_INSTRUMENT_IDS[0])
@@ -209,20 +194,13 @@ function App() {
   const [missionState, dispatchMission] = useReducer(missionReducer, null)
   const [previousRun, setPreviousRun] = useState<MissionDebrief | null>(null)
 
-  const totals = useMemo(() => {
-    const selected = [
-      ...instrumentOptions.filter((option) => selectedInstrumentIds.includes(option.id)),
-      ...(['power', 'propulsion', 'communications'] as const).flatMap((category) =>
-        options[category].filter((option) => option.id === selection[category]),
-      ),
-    ]
-    return {
-      mass: selected.reduce((sum, option) => sum + option.mass, 0),
-      cost: selected.reduce((sum, option) => sum + option.cost, 0),
-      draw: selected.reduce((sum, option) => sum + option.draw, 0),
-      output: selected.find((option) => option.output !== undefined)?.output ?? 0,
-    }
-  }, [selection, selectedInstrumentIds])
+  const evaluation = useMemo(
+    () => evaluateDesign({ ...selection, instrumentIds: selectedInstrumentIds }),
+    [selection, selectedInstrumentIds],
+  )
+  // `output` is generator output only. A battery's discharge limit is never counted as generation.
+  const totals = { mass: evaluation.massKg, cost: evaluation.costK, draw: evaluation.loadW, output: evaluation.generationW }
+  const selectedBattery = options.battery.find((option) => option.id === selection.battery && option.id !== NO_BATTERY_ID) ?? null
 
   const selectedInstrumentOptions = instrumentOptions.filter((option) => selectedInstrumentIds.includes(option.id))
   const visualizationParts: Lunar3DPart[] = [
@@ -236,83 +214,45 @@ function App() {
       costK: option.cost,
       sourceUrls: option.facts.source_urls,
     })),
-    ...(['power', 'propulsion', 'communications'] as const).flatMap((category) => {
+    ...COMPONENT_CATEGORIES.flatMap((category) => {
       const option = options[category].find((candidate) => candidate.id === selection[category])
-      if (!option) return []
+      // "No battery" is the absence of equipment, so it has no part to inspect.
+      if (!option || (category === 'battery' && option.id === NO_BATTERY_ID)) return []
       return [{
         id: option.id,
-        subsystem: category,
+        subsystem: subsystemOf(category),
         name: option.name,
         description: option.description,
         massKg: option.mass,
         powerDrawW: option.draw,
-        ...(option.output !== undefined ? { powerOutputW: option.output } : {}),
-        ...(category === 'power' && option.storageWh !== undefined && option.output !== undefined
-          ? { maxDischargeW: option.output, storageWh: option.storageWh }
+        ...(option.output !== undefined ? { powerOutputW: option.output, eclipseOutputW: option.eclipseOutput ?? 0 } : {}),
+        ...(option.storageWh !== undefined
+          ? { maxDischargeW: option.maxDischargeW ?? 0, storageWh: option.storageWh }
           : {}),
         costK: option.cost,
       }]
     }),
   ]
 
-  const missionDesign = useMemo<MissionDesign | null>(() => {
-    const power = options.power.find((option) => option.id === selection.power)
-    const propulsion = options.propulsion.find((option) => option.id === selection.propulsion)
-    const communications = options.communications.find((option) => option.id === selection.communications)
-    if (
-      selectedInstrumentOptions.length < MIN_SCIENCE_INSTRUMENTS
-      || selectedInstrumentOptions.length > MAX_SCIENCE_INSTRUMENTS
-      || !power
-      || !propulsion
-      || !communications
-    ) return null
+  const missionDesign = useMemo(
+    () => toMissionDesign({ ...selection, instrumentIds: selectedInstrumentIds }, selectedLaunchWindow),
+    [selection, selectedInstrumentIds, selectedLaunchWindow],
+  )
 
-    return {
-      instrumentIds: selectedInstrumentOptions.map((instrument) => instrument.id),
-      instrumentNames: selectedInstrumentOptions.map((instrument) => instrument.name),
-      powerId: power.id,
-      powerName: power.name,
-      batteryEnergyCapacityWh: power.storageWh ?? 0,
-      propulsionId: propulsion.id,
-      propulsionName: propulsion.name,
-      communicationsId: communications.id,
-      communicationsName: communications.name,
-      massKg: totals.mass,
-      massLimitKg: MASS_LIMIT,
-      massMarginKg: MASS_LIMIT - totals.mass,
-      powerLoadW: totals.draw,
-      powerCapacityW: totals.output,
-      powerMarginW: totals.output - totals.draw,
-      costK: totals.cost,
-      budgetLimitK: BUDGET_LIMIT,
-      budgetMarginK: BUDGET_LIMIT - totals.cost,
-      launchPenaltyMps: selectedLaunchWindow.propulsionPenaltyMps,
-      launchDate: selectedLaunchWindow.date,
-    }
-  }, [selection, selectedLaunchWindow, selectedInstrumentOptions, totals])
-
-  const massMargin = MASS_LIMIT - totals.mass
-  const powerMargin = totals.output - totals.draw
-  const budgetMargin = BUDGET_LIMIT - totals.cost
-  const isWithinLimits = selectedInstrumentOptions.length >= MIN_SCIENCE_INSTRUMENTS
-    && selectedInstrumentOptions.length <= MAX_SCIENCE_INSTRUMENTS
-    && massMargin >= 0
-    && powerMargin >= 0
-    && budgetMargin >= 0
+  const massMargin = evaluation.massMarginKg
+  const powerMargin = evaluation.sustainedMarginW
+  const budgetMargin = evaluation.budgetMarginK
+  const isWithinLimits = evaluation.isValid
   const selectedComponents = [
     ...selectedInstrumentOptions.map((option) => ({ category: 'Science instrument', option })),
-    ...(['power', 'propulsion', 'communications'] as const).flatMap((category) => {
+    ...COMPONENT_CATEGORIES.flatMap((category) => {
       const option = options[category].find((candidate) => candidate.id === selection[category])
       const title = categories.find((item) => item.id === category)?.title ?? category
       return option ? [{ category: title, option }] : []
     }),
   ]
-  const limitWarnings = [
-    ...(selectedInstrumentOptions.length < MIN_SCIENCE_INSTRUMENTS ? ['Select at least one science instrument'] : []),
-    ...(massMargin < 0 ? [`Mass limit exceeded by ${Math.abs(massMargin)} kg`] : []),
-    ...(powerMargin < 0 ? [`Power capacity exceeded by ${Math.abs(powerMargin)} W`] : []),
-    ...(budgetMargin < 0 ? [`Budget exceeded by ${formatCost(Math.abs(budgetMargin))}`] : []),
-  ]
+  const limitWarnings = evaluation.blockingIssues
+  const eclipse = evaluation.eclipse
   const currentDebrief = missionState?.status === 'complete' ? calculateMissionDebrief(missionState) : null
   const nextSeed = getNextMissionSeed(missionSeed)
   const displayedScreen = screen === 'simulation' && missionState?.status === 'complete' ? 'review' : screen
@@ -521,8 +461,9 @@ function App() {
                       categoryId={category.id}
                       selectedId={selection[category.id]}
                       onSelect={(id) => {
-                        setHighlightedSubsystem(category.id === 'instrument' ? 'science' : category.id)
-                        setHighlightedPartId(id)
+                        setHighlightedSubsystem(category.id === 'instrument' ? 'science' : subsystemOf(category.id))
+                        // "No battery" has no part to highlight, so fall back to the generator.
+                        setHighlightedPartId(category.id === 'battery' && id === NO_BATTERY_ID ? selection.power : id)
                         setSelection((current) => ({ ...current, [category.id]: id }))
                       }}
                     />
@@ -546,6 +487,7 @@ function App() {
                   instrumentNames: selectedInstrumentOptions.map((instrument) => instrument.name),
                   powerId: selection.power,
                   powerName: options.power.find((option) => option.id === selection.power)?.name ?? 'No power selected',
+                  batteryName: selectedBattery?.name ?? null,
                   propulsionName: options.propulsion.find((option) => option.id === selection.propulsion)?.name ?? 'No propulsion selected',
                   communicationsName: options.communications.find((option) => option.id === selection.communications)?.name ?? 'No communications selected',
                 }}
@@ -555,9 +497,17 @@ function App() {
                 <div className="metric-heading"><span>SPACECRAFT MASS</span><span className={massMargin < 0 ? 'over-limit' : ''}>{totals.mass} <small>/ {MASS_LIMIT} KG · {formatMargin(massMargin, 'KG')}</small></span></div>
                 <div className="meter"><span className={massMargin < 0 ? 'meter-over' : ''} style={{ width: `${Math.min((totals.mass / MASS_LIMIT) * 100, 100)}%` }} /></div>
               </div>
-              <div className="metric" title="Power margin is the available power capacity left after the spacecraft's power load.">
-                <div className="metric-heading"><span>POWER LOAD / CAPACITY</span><span className={powerMargin < 0 ? 'over-limit' : ''}>{totals.draw} <small>/ {totals.output} W · {formatMargin(powerMargin, 'W')}</small></span></div>
+              <div className="metric" title="Sunlit power compares the spacecraft load with what the generator produces in sunlight. A battery stores energy and is never counted as generation.">
+                <div className="metric-heading"><span>SUNLIT POWER · LOAD / GENERATION</span><span className={powerMargin < 0 ? 'over-limit' : ''}>{totals.draw} <small>/ {totals.output} W · {formatMargin(powerMargin, 'W')}</small></span></div>
                 <div className="meter"><span className={powerMargin < 0 ? 'meter-over' : ''} style={{ width: `${totals.output ? Math.min((totals.draw / totals.output) * 100, 100) : 0}%` }} /></div>
+              </div>
+              <div className="metric" title="Eclipse power compares the spacecraft load with what is available in a full eclipse: generator eclipse output plus the battery's discharge limit, in watts.">
+                <div className="metric-heading"><span>ECLIPSE POWER · LOAD / AVAILABLE</span><span className={eclipse.powerShortfallW > 0 ? 'over-limit' : ''}>{eclipse.demandW} <small>/ {eclipse.powerAvailableW} W · {eclipse.generationW} W GEN + {evaluation.batteryDischargeLimitW} W BATT</small></span></div>
+                <div className="meter"><span className={eclipse.powerShortfallW > 0 ? 'meter-over' : ''} style={{ width: `${eclipse.powerAvailableW ? Math.min((eclipse.demandW / eclipse.powerAvailableW) * 100, 100) : 100}%` }} /></div>
+              </div>
+              <div className="metric" title="Eclipse energy compares the watt-hours the battery must supply over the 0.5 hour reference eclipse with the watt-hours it stores.">
+                <div className="metric-heading"><span>ECLIPSE ENERGY · NEEDED / STORED</span><span className={eclipse.energyShortfallWh > 0 ? 'over-limit' : ''}>{eclipse.energyNeededWh} <small>/ {eclipse.energyAvailableWh} Wh · {eclipse.hours} H{evaluation.batteryCapacityWh > 0 ? '' : ' · NO BATTERY'}</small></span></div>
+                <div className="meter"><span className={eclipse.energyShortfallWh > 0 ? 'meter-over' : ''} style={{ width: `${eclipse.energyAvailableWh ? Math.min((eclipse.energyNeededWh / eclipse.energyAvailableWh) * 100, 100) : eclipse.energyNeededWh > 0 ? 100 : 0}%` }} /></div>
               </div>
               <div className="metric" title="Budget margin is the mission budget still available before reaching $2.40M.">
                 <div className="metric-heading"><span>MISSION BUDGET</span><span className={budgetMargin < 0 ? 'over-limit' : ''}>{formatCost(totals.cost)} <small>/ $2.40M · {formatBudgetMargin(budgetMargin)}</small></span></div>
@@ -567,6 +517,17 @@ function App() {
                 <span aria-hidden="true">{isWithinLimits ? '✓' : '!'}</span>
                 {isWithinLimits ? 'All systems within mission limits' : limitWarnings.join('; ')}
               </div>
+              {isWithinLimits && evaluation.advisories.length > 0 && (
+                <div className="limit-status status-advisory" role="status">
+                  <span aria-hidden="true">!</span>
+                  <span>
+                    <strong>Eclipse risk, launch allowed.</strong> {evaluation.advisories.join('; ')}. In flight you can shed load or hibernate instruments; a shortfall costs spacecraft health.
+                  </span>
+                </div>
+              )}
+              {selectedBattery && evaluation.recharge.possible && evaluation.recharge.hoursToFull !== null && (
+                <p className="recharge-note">Battery recharge: {evaluation.recharge.surplusW} W sunlit surplus refills {evaluation.batteryCapacityWh} Wh in about {evaluation.recharge.hoursToFull.toFixed(1)} h. Illustrative.</p>
+              )}
               <div className="summary-footnote">Spacecraft limits, component specifications, mission costs, and balancing estimates are illustrative game values. NASA source links describe real instrument capabilities only.</div>
               <button className="primary-button launch-button" type="button" disabled={!isWithinLimits} onClick={() => setScreen('launch')}>
                 {isWithinLimits ? 'Confirm spacecraft' : 'Adjust your design'} <span aria-hidden="true">↗</span>
@@ -685,10 +646,9 @@ function App() {
               <h2 id="spacecraft-summary-title">Lunar polar orbiter</h2>
               <dl className="ready-metrics">
                 <div><dt>SPACECRAFT MASS</dt><dd>{totals.mass} kg</dd></div>
-                <div><dt>POWER LOAD / CAPACITY</dt><dd>{totals.draw} / {totals.output} W</dd></div>
-                {missionDesign && missionDesign.batteryEnergyCapacityWh > 0 && (
-                  <div><dt>BATTERY ENERGY · ILLUSTRATIVE</dt><dd>{missionDesign.batteryEnergyCapacityWh} Wh</dd></div>
-                )}
+                <div><dt>SUNLIT LOAD / GENERATION</dt><dd>{totals.draw} / {totals.output} W</dd></div>
+                <div><dt>ECLIPSE LOAD / AVAILABLE</dt><dd>{eclipse.demandW} / {eclipse.powerAvailableW} W</dd></div>
+                <div><dt>BATTERY · ILLUSTRATIVE</dt><dd>{missionDesign && missionDesign.batteryEnergyCapacityWh > 0 ? `${missionDesign.batteryEnergyCapacityWh} Wh · ${missionDesign.batteryDischargeLimitW} W max` : 'None'}</dd></div>
                 <div><dt>MISSION COST</dt><dd>{formatCost(totals.cost)}</dd></div>
               </dl>
               <ul className="ready-components">

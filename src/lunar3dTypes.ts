@@ -9,6 +9,7 @@ export type Lunar3DPart = {
   massKg: number
   powerDrawW: number
   powerOutputW?: number
+  eclipseOutputW?: number
   maxDischargeW?: number
   storageWh?: number
   costK: number

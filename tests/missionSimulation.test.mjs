@@ -22,35 +22,36 @@ const simulation = await import(`data:text/javascript;base64,${Buffer.from(bundl
 
 const SEED = 104729
 
+// Generation and storage are separate equipment: `powerId` is the generator, `battery` adds storage.
 function makeDesign({
   powerId = 'solar',
+  battery = false,
   launchPenaltyMps = 0,
 } = {}) {
-  const powerCapacityW = powerId === 'solar' ? 500 : powerId === 'rtg' ? 320 : 240
-  const batteryEnergyCapacityWh = powerId === 'battery' ? 480 : 0
+  const powerCapacityW = powerId === 'solar' ? 500 : 320
   return {
     instrumentIds: ['LEND'],
     instrumentNames: ['Lunar Exploration Neutron Detector'],
     powerId,
-    powerName: powerId === 'solar'
-      ? 'Deployable solar array'
-      : powerId === 'rtg'
-        ? 'Radioisotope generator'
-        : 'High-density battery',
-    batteryEnergyCapacityWh,
+    powerName: powerId === 'solar' ? 'Deployable solar array' : 'Radioisotope generator',
+    eclipseGenerationW: powerId === 'rtg' ? 320 : 0,
+    batteryId: battery ? 'high-density' : 'none',
+    batteryName: battery ? 'High-density battery' : null,
+    batteryEnergyCapacityWh: battery ? 480 : 0,
+    batteryDischargeLimitW: battery ? 240 : 0,
     propulsionId: 'cold-gas',
     propulsionName: 'Cold-gas thrusters',
     communicationsId: 'x-band',
     communicationsName: 'X-band high-gain dish',
-    massKg: 77,
+    massKg: battery ? 95 : 77,
     massLimitKg: 150,
-    massMarginKg: 73,
+    massMarginKg: battery ? 55 : 73,
     powerLoadW: 220,
     powerCapacityW,
     powerMarginW: powerCapacityW - 220,
-    costK: 1340,
+    costK: battery ? 1600 : 1340,
     budgetLimitK: 2400,
-    budgetMarginK: 1060,
+    budgetMarginK: battery ? 800 : 1060,
     launchPenaltyMps,
     launchDate: '2027-01-22',
   }
@@ -180,7 +181,7 @@ test('solar headroom is not counted during a full eclipse', () => {
 })
 
 test('battery eclipse power is limited by discharge W and stored Wh over hours', () => {
-  const design = makeDesign({ powerId: 'battery' })
+  const design = makeDesign({ powerId: 'solar', battery: true })
   let state = driveToEclipse(startMission(design))
   const eclipse = simulation.getCurrentMissionEvent(state)
   state = resolve(state, eclipse, 'full-science')
@@ -189,7 +190,8 @@ test('battery eclipse power is limited by discharge W and stored Wh over hours',
   const flow = result.eclipsePowerFlow
   assert.equal(state.design.batteryEnergyCapacityWh, 480)
   assert.equal(flow.durationHours, 0.5)
-  assert.ok(flow.batteryDischargeW <= design.powerCapacityW)
+  assert.equal(flow.generationW, 0)
+  assert.ok(flow.batteryDischargeW <= design.batteryDischargeLimitW)
   assert.equal(flow.batteryEnergyUsedWh, flow.batteryDischargeW * flow.durationHours)
   assert.equal(flow.batteryEnergyRemainingWh, flow.batteryEnergyBeforeWh - flow.batteryEnergyUsedWh)
   assert.equal(state.telemetry.batteryEnergyRemainingWh, flow.batteryEnergyRemainingWh)

@@ -174,7 +174,7 @@ function MissionTelemetry({ state }: { state: MissionState }) {
       <TelemetryHistory state={state} />
       <div className="spacecraft-status">
         <span>SPACECRAFT CONFIGURATION</span>
-        <p>{state.design.instrumentNames.join(' + ')} · {state.design.powerName}</p>
+        <p>{state.design.instrumentNames.join(' + ')} · {state.design.powerName}{state.design.batteryName ? ` + ${state.design.batteryName}` : ''}</p>
         <p>{state.design.propulsionName} · {state.design.communicationsName}</p>
         <p>Science payload: {state.telemetry.instrumentsHibernated ? 'hibernated' : 'active'}</p>
         <p>Orbital status: {state.telemetry.orbitAchieved ? 'lunar orbit achieved' : 'not yet achieved'}</p>
@@ -426,7 +426,8 @@ export function MissionReviewView({
         before: sameSeedComparison.design.instrumentNames.slice().sort().join(' + '),
         after: debrief.design.instrumentNames.slice().sort().join(' + '),
       },
-      { label: 'Power system', before: sameSeedComparison.design.powerName, after: debrief.design.powerName },
+      { label: 'Power generation', before: sameSeedComparison.design.powerName, after: debrief.design.powerName },
+      { label: 'Energy storage', before: sameSeedComparison.design.batteryName ?? 'No battery', after: debrief.design.batteryName ?? 'No battery' },
       { label: 'Propulsion', before: sameSeedComparison.design.propulsionName, after: debrief.design.propulsionName },
       { label: 'Communications', before: sameSeedComparison.design.communicationsName, after: debrief.design.communicationsName },
     ].filter((component) => component.before !== component.after)

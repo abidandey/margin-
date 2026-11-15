@@ -10,7 +10,7 @@ import type { MissionSubsystem } from './missionSubsystems'
 export type SpacecraftConfiguration = Pick<
   MissionDesign,
   'instrumentNames' | 'powerId' | 'powerName' | 'propulsionName' | 'communicationsName'
->
+> & { batteryName?: string | null }
 
 const subsystemLabels: Record<MissionSubsystem, string> = {
   science: 'Science instruments',
@@ -178,7 +178,7 @@ export function SpacecraftSchematic({
       </div>
       <svg viewBox="0 0 420 150" role="img" aria-label="Spacecraft with labeled science payload, solar power arrays, propulsion and communications components">
         <g className={subsystemClass('power')}>
-          <title>Power system: {configuration.powerName}</title>
+          <title>Power system: {configuration.powerName}{configuration.batteryName ? ` with ${configuration.batteryName}` : ''}</title>
           {configuration.powerId === 'solar'
             ? (
               <>
@@ -222,7 +222,7 @@ export function SpacecraftSchematic({
           <span>SCIENCE PAYLOAD</span><strong>{configuration.instrumentNames.join(' + ') || 'No instrument selected'}</strong>
         </div>
         <div className={subsystemClass('power')} title={configuration.powerName}>
-          <span>{configuration.powerId === 'solar' ? 'SOLAR ARRAY' : configuration.powerId === 'rtg' ? 'RADIOISOTOPE POWER' : 'BATTERY POWER'}</span><strong>{configuration.powerName}</strong>
+          <span>{configuration.powerId === 'solar' ? 'SOLAR ARRAY' : 'RADIOISOTOPE POWER'}{configuration.batteryName ? ' + BATTERY' : ''}</span><strong>{configuration.powerName}{configuration.batteryName ? ` + ${configuration.batteryName}` : ''}</strong>
         </div>
         <div className={subsystemClass('propulsion')} title={configuration.propulsionName}>
           <span>PROPULSION</span><strong>{configuration.propulsionName}</strong>

@@ -154,8 +154,14 @@ function useReducedMotion() {
   return reducedMotion
 }
 
+// A battery is storage inside the power subsystem; it is identified by the energy it stores.
+function isBatteryPart(part: Lunar3DPart) {
+  return part.subsystem === 'power' && part.storageWh !== undefined
+}
+
+// For the power subsystem this returns the generator, never the battery.
 function selectPartForSubsystem(parts: Lunar3DPart[], subsystem: MissionSubsystem) {
-  return parts.find((part) => part.subsystem === subsystem)
+  return parts.find((part) => part.subsystem === subsystem && !isBatteryPart(part))
 }
 
 function getShipTarget(
@@ -864,16 +870,31 @@ function PowerAssembly({
       </group>
     )
   }
+  return null
+}
+
+// Battery pack: mounted on the top deck, separate from whichever generator is fitted.
+function BatteryPack({
+  active,
+  discharging,
+  interactions,
+}: {
+  active: boolean
+  discharging: boolean
+  interactions: SubsystemInteractions
+}) {
+  // Glows when selected, and while it carries the spacecraft through an eclipse.
+  const lit = active || discharging
   return (
-    <group position={[0.73, -0.02, -0.12]} {...interactions}>
+    <group position={[-0.18, 0.885, 0.16]} rotation={[-Math.PI / 2, 0, 0]} scale={0.55} {...interactions}>
       <RoundedBox args={[0.48, 0.56, 0.43]} radius={0.065} smoothness={4} castShadow>
         <meshPhysicalMaterial
           color={active ? '#a88d58' : '#857957'}
           metalness={0.53}
           roughness={0.4}
           clearcoat={0.18}
-          emissive={active && !eclipsed ? '#465a2e' : '#000000'}
-          emissiveIntensity={active && !eclipsed ? 0.15 : 0}
+          emissive={lit ? '#465a2e' : '#000000'}
+          emissiveIntensity={lit ? 0.15 : 0}
         />
       </RoundedBox>
       {[-1, 0, 1].map((x) => (
@@ -908,6 +929,7 @@ function SpacecraftModel({
   const [hoveredSubsystem, setHoveredSubsystem] = useState<MissionSubsystem | null>(null)
   const activeSubsystem = selectedPart?.subsystem ?? null
   const powerPart = selectPartForSubsystem(parts, 'power')
+  const batteryPart = parts.find(isBatteryPart)
   const propulsionPart = selectPartForSubsystem(parts, 'propulsion')
   const communicationsPart = selectPartForSubsystem(parts, 'communications')
   const scienceParts = parts.filter((part) => part.subsystem === 'science')
@@ -949,10 +971,17 @@ function SpacecraftModel({
         <SpacecraftBus foilTexture={foilTexture} />
         <PowerAssembly
           part={powerPart}
-          active={isHighlighted('power')}
+          active={selectedPart ? selectedPart.id === powerPart?.id || hoveredSubsystem === 'power' : isHighlighted('power')}
           eclipsed={eclipsed}
-          interactions={subsystemHandlers('power')}
+          interactions={subsystemHandlers('power', powerPart?.id)}
         />
+        {batteryPart && (
+          <BatteryPack
+            active={selectedPart?.id === batteryPart.id}
+            discharging={eclipsed}
+            interactions={subsystemHandlers('power', batteryPart.id)}
+          />
+        )}
         {scienceParts.map((part, index) => (
           <ScienceInstrumentModule
             key={part.id}
@@ -1211,8 +1240,10 @@ function ComponentDetails({ part }: { part: Lunar3DPart | null }) {
           <dt>Power</dt>
           <dd>
             {part.powerOutputW !== undefined
-              ? `${part.powerOutputW} W output`
-              : `${part.powerDrawW} W draw`}
+              ? `${part.powerOutputW} W sunlit output`
+              : part.storageWh !== undefined
+                ? 'Stores energy'
+                : `${part.powerDrawW} W draw`}
           </dd>
         </div>
         {part.maxDischargeW !== undefined && (
@@ -1221,8 +1252,18 @@ function ComponentDetails({ part }: { part: Lunar3DPart | null }) {
         {part.storageWh !== undefined && (
           <div><dt>Battery energy</dt><dd>{part.storageWh} Wh</dd></div>
         )}
-        {part.subsystem === 'power' && part.storageWh === undefined && (
-          <div className="lunar3d-spec-wide"><dt>Battery energy</dt><dd>Not separately specified by this selected power option.</dd></div>
+        {part.eclipseOutputW !== undefined && (
+          <div><dt>Eclipse output</dt><dd>{part.eclipseOutputW} W</dd></div>
+        )}
+        {part.subsystem === 'power' && (
+          <div className="lunar3d-spec-wide">
+            <dt>Role</dt>
+            <dd>
+              {part.storageWh !== undefined
+                ? 'Energy storage. It generates no power and recharges only from generator surplus.'
+                : 'Power generation. Stored energy comes from a separate battery, if one is fitted.'}
+            </dd>
+          </div>
         )}
         <div><dt>Mission cost</dt><dd>${part.costK.toLocaleString()}k</dd></div>
       </dl>
@@ -1296,7 +1337,8 @@ function FallbackVisualization({
   const fallbackConfiguration = missionState?.design ?? {
     instrumentNames: components.filter((part) => part.subsystem === 'science').map((part) => part.name),
     powerId: selectedPowerId,
-    powerName: components.find((part) => part.subsystem === 'power')?.name ?? 'Power not selected',
+    powerName: selectPartForSubsystem(components, 'power')?.name ?? 'Power not selected',
+    batteryName: components.find(isBatteryPart)?.name ?? null,
     propulsionName: components.find((part) => part.subsystem === 'propulsion')?.name ?? 'Propulsion not selected',
     communicationsName: components.find((part) => part.subsystem === 'communications')?.name ?? 'Communications not selected',
   }
