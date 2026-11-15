@@ -314,6 +314,10 @@ function App() {
   }
 
   useEffect(() => {
+    if (displayedScreen === 'simulation' || displayedScreen === 'review') window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [displayedScreen])
+
+  useEffect(() => {
     if (screen === 'builder' && retryCategory) {
       document.getElementById(`component-${retryCategory}`)?.scrollIntoView({ block: 'start' })
       document.getElementById(`component-${retryCategory}`)?.focus({ preventScroll: true })

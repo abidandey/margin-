@@ -50,12 +50,15 @@ export function MissionOrbitalVisualization({
 }) {
   const prefix = useId().replace(/:/g, '')
   const position = orbitPosition(state, event)
-  const isEclipse = event?.type === 'eclipse'
-  const isScience = event?.type === 'science'
-  const isCommunications = event?.type === 'communications'
+  const resolved = event ? state.resolvedEvents.find(result => result.id === event.id) : null
+  const isEclipse = event?.type === 'eclipse' && state.telemetry.orbitAchieved
+  const isScience = event?.type === 'science' && state.telemetry.orbitAchieved && (!resolved || resolved.scienceDelta > 0)
+  const isCommunications = event?.type === 'communications' || state.telemetry.dataReturnedPoints > 0
+  const dataReturned = state.telemetry.dataReturnedPoints > 0
+  const insertionResolved = state.resolvedEvents.some(result => result.type === 'insertion')
   const orbitStatus = state.telemetry.orbitAchieved
     ? 'LUNAR ORBIT ACHIEVED'
-    : state.phase === 'Lunar Orbit Insertion'
+    : insertionResolved ? 'LUNAR ORBIT MISSED' : state.phase === 'Lunar Orbit Insertion'
       ? 'ORBIT INSERTION IN PROGRESS'
       : 'ORBIT NOT YET ACHIEVED'
 
@@ -64,10 +67,10 @@ export function MissionOrbitalVisualization({
       <div className="mission-scene-heading">
         <div>
           <p className="section-kicker">FLIGHT DYNAMICS · SCHEMATIC</p>
-          <h2>{state.phase}</h2>
+          <h2>{isEclipse ? 'Passing through shadow' : isScience ? resolved ? 'Evidence collected' : 'Surface target ahead' : isCommunications ? dataReturned ? 'Data returning to Earth' : 'Earth link interrupted' : state.telemetry.orbitAchieved ? 'Orbiting the Moon' : insertionResolved ? 'Flying past the Moon' : state.phase === 'Lunar Orbit Insertion' ? 'Braking for lunar orbit' : 'Approaching the Moon'}</h2>
         </div>
         <span className={`orbit-state${state.telemetry.orbitAchieved ? ' is-achieved' : ''}`}>
-          {isEclipse ? 'ECLIPSE SHADOW · SOLAR 0 W' : orbitStatus}
+          {isEclipse ? `ECLIPSE · ${state.design.eclipseGenerationW ?? 0} W GENERATION` : orbitStatus}
         </span>
       </div>
       <svg className="mission-orbit-svg" viewBox="0 0 560 310" role="img" aria-labelledby={`${prefix}-title ${prefix}-desc`}>
@@ -76,7 +79,7 @@ export function MissionOrbitalVisualization({
           Earth, a schematic lunar south pole, the spacecraft and its orbit. Current phase: {state.phase}.
           {isEclipse ? ' The spacecraft is shown in eclipse shadow.' : ''}
           {isScience ? ' A science observation targets the south-polar region.' : ''}
-          {isCommunications ? ' A communications link interruption is in progress between the spacecraft and Earth.' : ''}
+          {isCommunications ? dataReturned ? ' Science data has been returned to Earth.' : ' The Earth link is interrupted.' : ''}
         </desc>
         <defs>
           <radialGradient id={`${prefix}-moon`} cx="36%" cy="28%">
@@ -111,8 +114,8 @@ export function MissionOrbitalVisualization({
         )}
         {isCommunications && (
           <>
-            <path className="communication-signal is-interrupted" d={`M ${position.x} ${position.y} Q 260 18 64 72`} />
-            <text className="signal-label is-interrupted" x="150" y="46">LINK INTERRUPTION</text>
+            <path className={`communication-signal${dataReturned ? '' : ' is-interrupted'}`} d={`M ${position.x} ${position.y} Q 260 18 64 72`} />
+            <text className="signal-label" x="150" y="46">{dataReturned ? `${Math.round(state.telemetry.dataReturnedPoints)} DATA POINTS HOME` : 'LINK INTERRUPTION'}</text>
           </>
         )}
 
@@ -134,6 +137,7 @@ export function MissionOrbitalVisualization({
           <rect className="spacecraft-bus" x="-10" y="-9" width="20" height="18" rx="3" />
           <path className="spacecraft-antenna" d="M 0 -9 L 8 -19 M 5 -19 Q 13 -15 12 -9" />
           <path className="spacecraft-engine" d="M -4 9 L 0 15 L 4 9" />
+          {event?.type === 'insertion' && !resolved && <path className="insertion-burn" d="M -4 16 L 0 29 L 4 16" />}
           {isEclipse && <circle className="shadow-indicator" r="18" />}
         </g>
       </svg>

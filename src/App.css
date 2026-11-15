@@ -4550,3 +4550,91 @@
   .is-guided .choice-arrow { display: none; }
 }
 .component-retry { margin: 0 0 14px; padding: 14px; border-left: 3px solid var(--lime); background: var(--panel); font-size: 13px; line-height: 1.6; }
+
+/* Focused guided cockpit: one scene, one decision, optional engineering detail. */
+.is-guided .simulation-main { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: start; gap: 16px; }
+.is-guided .guided-flight { grid-column: 1; grid-row: 1; min-width: 0; }
+.is-guided .event-control { grid-column: 2; grid-row: 1; order: 0; padding: 16px; }
+.is-guided .flight-details, .is-guided .resolved-event-log { grid-column: 1 / -1; order: 0; margin: 0; }
+.is-guided .mission-choices { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.is-guided .mission-choice { min-height: 0; padding: 11px 12px; }
+.is-guided .choice-copy { gap: 3px; }
+.is-guided .choice-copy > span { font-size: 12px; line-height: 1.35; }
+.is-guided .choice-copy > strong { font-size: 14px; }
+.is-guided .event-description { font-size: 14px; line-height: 1.45; margin: 9px 0 12px; }
+.is-guided .event-control h2 { font-size: 24px; margin: 8px 0; }
+.is-guided .event-counter { margin: 10px 0 6px; }
+.is-guided .science-opportunity-context { padding: 0; margin: 8px 0 0; }
+.is-guided .guided-status { align-items: center; padding: 10px 14px; gap: 10px 24px; }
+.guided-status > span { display: grid; gap: 4px; }
+.guided-status > span > small { color: var(--muted); font-size: 10px; }
+.guided-reading { display: block; font-size: 17px; animation: cockpit-feedback 550ms ease-out; }
+.guided-reading small { font-size: 10px; font-weight: 400; }
+.is-guided .guided-status > small { flex-basis: auto; margin-left: auto; font-size: 9px; }
+.guided-flight .mission-scene { margin: 0; }
+.guided-flight .mission-orbit-svg { min-height: 245px; }
+.guided-flight .mission-scene-footer { flex-direction: column; gap: 4px; }
+.flight-subsystem { padding: 10px 14px; border: 1px solid var(--line); border-top: 0; color: var(--lime); font: 10px var(--mono); }
+.subsystem-feedback { display: block; animation: cockpit-feedback 600ms ease-out; }
+.outcome-numbers { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 18px 0; list-style: none; }
+.outcome-numbers li { flex: 1 1 95px; padding: 12px; border: 1px solid var(--line); background: var(--page); animation: cockpit-feedback 600ms ease-out; }
+.outcome-numbers span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+.outcome-numbers strong { font-size: 20px; color: var(--white); }
+.decision-outcome > .primary-button { width: 100%; justify-content: center; }
+.outcome-details { margin-top: 14px; font-size: 12px; line-height: 1.6; }
+.retry-comparison { padding: 18px; border: 1px solid var(--line); background: var(--panel); margin: 16px 0; }
+.retry-comparison h2 { margin: 0 0 12px; }
+.retry-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.retry-metrics > div { display: grid; gap: 8px; padding: 12px; background: var(--page); }
+.retry-metrics span, .retry-metrics small, .retry-comparison p, .retry-comparison > small { color: var(--muted); font-size: 11px; }
+.retry-metrics strong { color: var(--white); font-size: 14px; }
+.retry-brief h2 { max-width: 850px; font-size: 20px; line-height: 1.4; }
+.insertion-burn { stroke: var(--orange); stroke-width: 3; fill: #e2b46e; }
+@keyframes cockpit-feedback { 0% { color: var(--lime); background-color: #334125; } 100% { background-color: transparent; } }
+@media (max-width: 760px) {
+  .is-guided .simulation-main { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .is-guided .event-control { grid-column: 1; grid-row: 2; }
+  .is-guided .simulation-heading { margin: 18px 0 12px; display: block; }
+  .is-guided .simulation-heading h1 { font-size: 28px; letter-spacing: -1px; }
+  .is-guided .simulation-heading-tools { display: none; }
+  .is-guided .simulation-heading .builder-intro { font-size: 10px; }
+  .is-guided .guided-status { gap: 10px 14px; }
+  .is-guided .guided-status > small { flex-basis: 100%; margin: 0; }
+  .guided-flight .mission-orbit-svg { min-height: 0; max-height: 210px; }
+  .guided-flight .mission-scene-heading h2 { font-size: 13px; }
+  .guided-flight .mission-scene-heading { flex-direction: row; }
+  .guided-flight .mission-scene-footer span:first-child { display: none; }
+  .is-guided .phase-track { display: none; }
+  .retry-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guided-reading, .subsystem-feedback, .outcome-numbers li, .science-target.is-active, .communication-signal { animation: none; }
+  .scene-spacecraft, .eclipse-shadow { transition: none; }
+}
+.has-damage .flight-subsystem { color: var(--orange); border-color: #674331; }
+.has-damage .scene-spacecraft .spacecraft-bus { stroke: var(--orange); stroke-width: 3; }
+.has-damage .subsystem-feedback { animation-name: damage-feedback; }
+@keyframes damage-feedback { from { background-color: #674331; } to { background-color: transparent; } }
+@media (max-width: 760px) {
+  .is-guided .guided-flight { position: sticky; top: 0; z-index: 2; background: var(--page); }
+  .guided-flight .mission-orbit-svg { max-height: 165px; }
+  .guided-flight .mission-scene { padding: 9px 12px; }
+  .guided-flight .mission-scene-heading .section-kicker { display: none; }
+  .guided-flight .mission-scene-footer { font-size: 6px; padding-top: 5px; }
+  .flight-subsystem { padding: 7px 12px; }
+  .is-guided .event-control { scroll-margin-top: 240px; }
+}
+@media (prefers-reduced-motion: reduce) { .has-damage .subsystem-feedback { animation: none; } }
+@media (max-width: 760px) {
+  .review-heading { margin: 16px 0 12px; gap: 10px; }
+  .review-heading h1 { font-size: 30px; }
+  .review-heading .eyebrow { margin-bottom: 7px; }
+  .review-heading-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .review-result-banner { padding: 12px; margin-bottom: 12px; }
+  .retry-comparison { padding: 12px; margin: 12px 0; }
+  .retry-metrics > div { padding: 8px; gap: 5px; }
+  .retry-comparison p { margin: 9px 0; }
+  .retry-brief { padding: 14px; margin: 12px 0; }
+  .retry-brief p { font-size: 12px; line-height: 1.5; }
+  .retry-brief h2 { font-size: 16px; }
+}

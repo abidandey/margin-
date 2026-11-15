@@ -1,5 +1,5 @@
-import { getRetryFocus } from './guidedMission'
-import { useEffect, useRef } from 'react'
+import { getReviewTakeaway, compareMissionRuns } from './guidedMission'
+import { useEffect, useRef, useState } from 'react'
 import {
   getCurrentMissionEvent,
   getMissionPowerHeadroom,
@@ -20,7 +20,7 @@ import type { Lunar3DPart } from './lunar3dTypes'
 import { playSound, playSoundOnce, type MissionSound } from './missionAudio'
 import { SoundControls } from './SoundControls'
 import { getAffectedSubsystem } from './missionSubsystems'
-import { EffectChips, FailureReviewBoard } from './ReviewBoard'
+import { FailureReviewBoard } from './ReviewBoard'
 import { TelemetryHistory } from './TelemetryHistory'
 
 type MissionSimulationViewProps = {
@@ -193,7 +193,22 @@ function MissionTelemetry({ state }: { state: MissionState }) {
 }
 
 export function MissionSimulationView({ state, parts, selectedPowerId, onResolve, guided = false, showOutcome = false, onContinue, onAdvance, beforeDecision }: MissionSimulationViewProps) {
+  const [inspectorOpen, setInspectorOpen] = useState(false)
   const activeEvent = getCurrentMissionEvent(state)
+  const latest = state.resolvedEvents.at(-1)
+  const visualEvent = activeEvent ?? (showOutcome && latest ? state.scenario.events.find(event => event.id === latest.id) ?? null : null)
+  const affectedSubsystem = getAffectedSubsystem(visualEvent)
+  const outcomeChanges = beforeDecision ? [
+    { label: 'Health', value: state.telemetry.health - beforeDecision.health, unit: 'pts' },
+    { label: 'Battery', value: state.telemetry.batteryEnergyRemainingWh - beforeDecision.batteryEnergyRemainingWh, unit: 'Wh' },
+    { label: 'Maneuver reserve', value: state.telemetry.deltaVRemainingMps - beforeDecision.deltaVRemainingMps, unit: 'm/s' },
+    { label: 'Science', value: state.telemetry.scienceProgress - beforeDecision.scienceProgress, unit: 'pts' },
+    { label: 'Data home', value: state.telemetry.dataReturnedPoints - beforeDecision.dataReturnedPoints, unit: 'pts' },
+  ].filter(change => change.value !== 0).slice(0, 3) : []
+  const outcomeHeadline = !latest ? '' : latest.type === 'insertion' ? state.telemetry.orbitAchieved ? 'You made lunar orbit.' : 'Lunar orbit missed.'
+    : latest.type === 'eclipse' ? latest.healthDelta < 0 ? 'The eclipse strained your explorer.' : 'Through the shadow safely.'
+    : latest.type === 'science' ? latest.scienceDelta > 0 ? 'New evidence collected.' : 'Observation skipped.'
+    : state.telemetry.dataReturnedPoints > 0 ? 'Your evidence reached Earth.' : 'No data reached Earth.'
   const phaseIndex = MISSION_PHASES.indexOf(state.phase)
   const progress = (state.elapsedSeconds / MISSION_DURATION_SECONDS) * 100
   const advice = activeEvent ? getMissionAdvice(activeEvent, state) : []
@@ -244,7 +259,10 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
         </div>
       </div>
 
-      {guided && <div className="guided-status"><strong>Goal: investigate possible ice and return the evidence.</strong><span>Health {Math.round(state.telemetry.health)}/100</span><span>Battery {Math.round(state.telemetry.batteryEnergyRemainingWh)} Wh</span><span>Maneuver reserve {Math.round(state.telemetry.deltaVRemainingMps)} m/s</span><span>Science {Math.round(state.telemetry.scienceProgress)}/100</span><span>Data home {Math.round(state.telemetry.dataReturnedPoints)} pts</span><small>Illustrative game values · {state.resolvedEvents.length}/4 decisions complete</small></div>}
+      {guided && <div className="guided-status" aria-label="Spacecraft status">
+        {[['Health', state.telemetry.health, '/100'], ['Battery', state.telemetry.batteryEnergyRemainingWh, 'Wh'], ['Maneuver reserve', state.telemetry.deltaVRemainingMps, 'm/s'], ['Science', state.telemetry.scienceProgress, '/100'], ['Data home', state.telemetry.dataReturnedPoints, 'pts']].map(([label, value, unit]) => <span key={label}><small>{label}</small><strong className="guided-reading" key={`${label}-${value}`}>{Math.round(Number(value))} <small>{unit}</small></strong></span>)}
+        <small>Illustrative values · {state.resolvedEvents.length}/4 decisions complete</small>
+      </div>}
       <div className="phase-track" aria-label={`Current phase: ${state.phase}`}>
         {MISSION_PHASES.map((phase, index) => (
           <div className={`phase-stop${index < phaseIndex ? ' is-complete' : ''}${index === phaseIndex ? ' is-current' : ''}`} key={phase}>
@@ -259,19 +277,22 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
 
       <div className="simulation-layout">
         <div className="simulation-main">
-          <details className="flight-details" open={guided ? undefined : true}><summary>Explore spacecraft &amp; orbit</summary>
+          {guided && <div className={`guided-flight${showOutcome && latest && latest.healthDelta < 0 ? ' has-damage' : ''}`}><MissionOrbitalVisualization state={state} event={visualEvent} /><div className="flight-subsystem" key={`${state.resolvedEvents.length}-${affectedSubsystem}`}><span className={showOutcome ? 'subsystem-feedback' : ''}>{affectedSubsystem ? `${affectedSubsystem.toUpperCase()} · ${showOutcome ? 'RESPONSE RECORDED' : 'DECISION AHEAD'}` : 'EXPLORER EN ROUTE'}</span></div></div>}
+          <details className="flight-details" open={guided ? undefined : true} onToggle={event => setInspectorOpen(event.currentTarget.open)}><summary>3D inspector &amp; engineering schematics</summary>
+          {(!guided || inspectorOpen) && <>
           <Lunar3DPanel
             mode="mission"
             parts={parts}
             selectedPowerId={selectedPowerId}
             missionState={state}
           />
-          <MissionOrbitalVisualization state={state} event={activeEvent ?? null} />
+          {!guided && <MissionOrbitalVisualization state={state} event={activeEvent ?? null} />}
           <SpacecraftSchematic
             configuration={state.design}
             affectedSubsystem={getAffectedSubsystem(activeEvent ?? null)}
             payloadHibernated={state.telemetry.instrumentsHibernated}
           />
+          </>}
           </details>
           <section className={`event-control${activeEvent ? ' is-awaiting' : ''}`} aria-live="polite">
             <div className="sim-panel-heading">
@@ -283,30 +304,17 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
             {showOutcome && state.resolvedEvents.length > 0 ? (
               <div className="decision-outcome" key={state.resolvedEvents.length}>
                 <p className="event-counter">DECISION {state.resolvedEvents.length} / 4 · RESULT</p>
-                <h2>{state.resolvedEvents.at(-1)!.choiceLabel}</h2>
-                <p>{state.resolvedEvents.at(-1)!.outcome}</p>
-                <EffectChips event={{ ...state.resolvedEvents.at(-1)!, ...(beforeDecision ? {
-                  healthDelta: state.telemetry.health - beforeDecision.health,
-                  scienceDelta: state.telemetry.scienceProgress - beforeDecision.scienceProgress,
-                  deltaVDeltaMps: state.telemetry.deltaVRemainingMps - beforeDecision.deltaVRemainingMps,
-                  dataReturnedDelta: state.telemetry.dataReturnedPoints - beforeDecision.dataReturnedPoints,
-                } : {}) }} />
+                <h2>{outcomeHeadline}</h2>
+                <ul className="outcome-numbers">{outcomeChanges.map(change => <li key={change.label}><span>{change.label}</span><strong>{formatSignedDelta(change.value, change.unit)}</strong></li>)}</ul>
+                {outcomeChanges.length === 0 && <p>No change to the main spacecraft readings.</p>}
                 <button className="primary-button" onClick={() => { playSound('confirm'); onContinue() }}>CONTINUE MISSION →</button>
+                <details className="outcome-details"><summary>Why this happened · engineering &amp; science</summary><p>{latest!.outcome}</p><ul>{latest!.causalFactors.map(factor => <li key={factor}>{factor}</li>)}</ul><ScienceFindingList findings={latest!.scienceFindings} /></details>
               </div>
             ) : activeEvent ? (
               <>
                 <p className="event-counter">SEEDED EVENT {state.resolvedEvents.length + 1} / 4</p>
-                <h2>{activeEvent.title}</h2>
-                <p className="event-description">{guided ? activeEvent.type === 'science' ? `${activeEvent.description} Choose an observation or save power.` : EVENT_EXPLANATIONS[activeEvent.type] : activeEvent.description}</p>
-                {scienceOpportunity && (
-                  <details className="science-opportunity-context"><summary>NASA science, sources &amp; uncertainty</summary><section aria-label="Science opportunity facts">
-                    <span>NASA-GROUNDED CAPABILITIES · ILLUSTRATIVE EVENT</span>
-                    <p>{scienceOpportunity.scientific_basis}</p>
-                    <p><strong>Recommended instruments:</strong> {scienceOpportunity.recommended_instruments.join(', ')}</p>
-                    <SourceLinks urls={scienceOpportunity.source_urls} />
-                    <p>No single observation confirms extractable ice. Neutrons indicate hydrogen; thermal data identify potentially ice-stable conditions; radar has multiple interpretations.</p>
-                  </section></details>
-                )}
+                <h2>{guided ? EVENT_TITLES[activeEvent.type] : activeEvent.title}</h2>
+                <p className="event-description">{guided ? EVENT_EXPLANATIONS[activeEvent.type] : activeEvent.description}</p>
                 <h3 className="choice-heading">Choose a response</h3>
                 <div className="mission-choices">
                   {choices.map((choice) => (
@@ -320,13 +328,22 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
                       }}
                     >
                       <span className="choice-copy">
-                        <strong>{choice.label}</strong>
+                        <strong>{guided ? CHOICE_LABELS[choice.id] : choice.label}</strong>
                         {guided ? <><span>Benefit: {CHOICE_GUIDANCE[choice.id][0]}</span><span>Risk: {CHOICE_GUIDANCE[choice.id][1]}</span></> : <span>{choice.description}</span>}
                       </span>
                       <span className="choice-arrow" aria-hidden="true">↗</span>
                     </button>
                   ))}
                 </div>
+                {scienceOpportunity && (
+                  <details className="science-opportunity-context"><summary>NASA science, sources &amp; uncertainty</summary><section aria-label="Science opportunity facts">
+                    <span>NASA-GROUNDED CAPABILITIES · ILLUSTRATIVE EVENT</span>
+                    <p>{scienceOpportunity.scientific_basis}</p>
+                    <p><strong>Recommended instruments:</strong> {scienceOpportunity.recommended_instruments.join(', ')}</p>
+                    <SourceLinks urls={scienceOpportunity.source_urls} />
+                    <p>No single observation confirms extractable ice. Neutrons indicate hydrogen; thermal data identify potentially ice-stable conditions; radar has multiple interpretations.</p>
+                  </section></details>
+                )}
                 <details open={guided ? undefined : true}><summary>Engineering details &amp; team advice</summary><section className="advice-panel" aria-labelledby="advice-title">
                   <p className="section-kicker" id="advice-title">COMPETING ADVICE</p>
                   <div className="advice-grid">
@@ -591,8 +608,18 @@ export function MissionReviewView({
         </div>
       </div>
 
-      {sameSeedComparison && <section className="retry-brief"><h2>Same challenges. What improved?</h2><p>Health: {Math.round(sameSeedComparison.telemetry.health)} → {Math.round(debrief.telemetry.health)} / 100 · Ice evidence: {sameSeedComparison.objectives.primary.value} → {debrief.objectives.primary.value} pts · Data home: {Math.round(sameSeedComparison.telemetry.dataReturnedPoints)} → {Math.round(debrief.telemetry.dataReturnedPoints)} pts. All values illustrative.</p><p>{componentRows.length} component changes · {changedDecisionCount} response changes. {componentRows.length + changedDecisionCount > 1 ? 'Several inputs changed; this comparison does not isolate one cause.' : 'Review the event record below to connect the changed input with the measured outcomes.'}</p></section>}
-      <section className="retry-brief"><p className="section-kicker">YOUR NEXT EXPERIMENT</p><h2>{getRetryFocus(debrief).title}</h2><p>{getRetryFocus(debrief).text}</p><button className="primary-button" onClick={onRedesign}>FIX &amp; RETRY SAME SCENARIO →</button><p>Same seed, same challenges. Change one thing to compare outcomes; multiple changed components or responses prevent a single-cause conclusion.</p></section>
+      {sameSeedComparison && <section className="retry-comparison" aria-label="Same scenario comparison">
+        <h2>{compareMissionRuns(sameSeedComparison, debrief)}</h2>
+        <div className="retry-metrics">{[
+          ['Result', sameSeedComparison.result, debrief.result],
+          ['Health', `${Math.round(sameSeedComparison.telemetry.health)}/100`, `${Math.round(debrief.telemetry.health)}/100`],
+          ['Science', `${Math.round(sameSeedComparison.telemetry.scienceProgress)}/100`, `${Math.round(debrief.telemetry.scienceProgress)}/100`],
+          ['Data home', `${Math.round(sameSeedComparison.telemetry.dataReturnedPoints)} pts`, `${Math.round(debrief.telemetry.dataReturnedPoints)} pts`],
+        ].map(([label, before, after]) => <div key={label}><span>{label}</span><strong>{before} → {after}</strong><small>{before === after ? 'Unchanged' : 'Changed'}</small></div>)}</div>
+        <p>Same seed · {componentRows.length} component changes · {changedDecisionCount} response changes · illustrative values.</p>
+        <small>Changes reflect all recorded inputs; multiple changes do not isolate a single cause.</small>
+      </section>}
+      <section className="retry-brief"><p className="section-kicker">YOUR NEXT EXPERIMENT</p><p>{getReviewTakeaway(debrief).cause}</p><h2>{getReviewTakeaway(debrief).recommendation}</h2><button className="primary-button" onClick={onRedesign}>FIX &amp; RETRY SAME SCENARIO →</button></section>
       <FailureReviewBoard debrief={debrief} previous={sameSeedComparison} />
 
       <section className="review-section" aria-labelledby="score-title">
@@ -848,23 +875,30 @@ export function MissionReviewView({
   )
 }
 
+const EVENT_TITLES = { insertion: 'Catch the Moon', eclipse: 'Into the shadow', science: 'Investigate the surface', communications: 'Send the evidence home' }
 const EVENT_EXPLANATIONS = {
-  insertion: 'Your explorer must slow down to stay around the Moon. Spend your maneuver reserve carefully: too little braking means missing lunar orbit.',
-  eclipse: 'The Moon blocks the Sun for half an illustrative hour. Keep observing or reduce demand to protect your explorer when solar panels stop generating power.',
-  science: 'A promising target is coming into view. Choose what to observe, or save power for the rest of the mission.',
-  communications: 'The connection to Earth has faded. Choose how to get your collected evidence home.',
+  insertion: 'Brake enough to enter lunar orbit without using up your maneuver reserve.',
+  eclipse: 'Sunlight is gone, so demand must fit your generator and battery supply.',
+  science: 'A polar target offers new clues, but observing it takes power.',
+  communications: 'Your Earth connection has faded with science data still aboard.',
+}
+const CHOICE_LABELS: Record<string, string> = {
+  nominal: 'Balanced braking', conserve: 'Save maneuver reserve', precision: 'Aim for precision',
+  'full-science': 'Keep observing', 'low-power': 'Use less power', hibernate: 'Sleep the instruments',
+  reacquire: 'Reconnect now', buffer: 'Store & forward', 'reduced-rate': 'Send a smaller set',
+  'target-ice': 'Investigate ice clues', 'map-rim': 'Map the crater rim', 'stand-down': 'Skip this observation',
 }
 const CHOICE_GUIDANCE: Record<string, [string, string]> = {
-  nominal: ['A balanced orbit and science return.', 'Uses the planned maneuver reserve; insufficient reserve means missing orbit.'],
-  conserve: ['Save maneuver reserve.', 'A less favorable orbit earns less science; reserve must still cover the burn.'],
-  precision: ['Better orbital placement and more science if successful.', 'Spends extra reserve and can fail if you cannot cover the burn.'],
-  'full-science': ['Keep observations running.', 'Power demand can exceed generation and battery supply, damaging the spacecraft.'],
-  'low-power': ['Reduce demand by 80 W while continuing some science.', 'Less science than full operation; a power shortage may remain.'],
-  hibernate: ['Turn instruments off to reduce demand.', 'Lose this observation window; instruments stay off until an observation restores them.'],
-  reacquire: ['Recover the connection and return data.', 'A long interruption can exceed your antenna’s recovery capability.'],
-  buffer: ['Store data and forward it through your selected link.', 'The amount returned depends on your communications hardware.'],
-  'reduced-rate': ['Send a smaller, robust data set.', 'Fewer data points reach Earth.'],
-  'target-ice': ['Collect instrument evidence about possible ice.', 'Needs power; insufficient supply reduces science and health. Evidence does not confirm ice.'],
-  'map-rim': ['Collect terrain and shadow context.', 'Uses power and favors mapping over targeted ice evidence.'],
-  'stand-down': ['Save power by skipping observations.', 'No evidence or mapping from this opportunity.'],
+  nominal: ['Balanced science', 'Needs the planned reserve'],
+  conserve: ['Save maneuver reserve', 'Less science; still needs enough braking'],
+  precision: ['More science if successful', 'Extra reserve needed'],
+  'full-science': ['Most eclipse science if powered', 'Power shortage can damage systems'],
+  'low-power': ['Lower demand', 'Less science; shortage may remain'],
+  hibernate: ['Lowest instrument demand', 'No eclipse science; shortage may remain'],
+  reacquire: ['Restore data return', 'Long outages can defeat your link'],
+  buffer: ['Protect collected data', 'Hardware limits how much returns'],
+  'reduced-rate': ['Reliable smaller return', 'Less data reaches Earth'],
+  'target-ice': ['Gather ice clues', 'Power shortage reduces yield and health'],
+  'map-rim': ['Gain terrain context', 'Less focus on ice; needs power'],
+  'stand-down': ['Save power', 'No new evidence'],
 }
