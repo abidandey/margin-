@@ -7,6 +7,7 @@ import {
 } from './missionSimulation'
 import { getAffectedSubsystem } from './missionSubsystems'
 import { SpacecraftSchematic } from './MissionVisuals'
+import { playSound } from './missionAudio'
 
 type Severity = 'problem' | 'gain' | 'neutral'
 
@@ -150,7 +151,10 @@ export function FailureReviewBoard({
                 type="button"
                 className={`review-timeline-item board-card is-${severity}`}
                 aria-pressed={event.id === selected.id}
-                onClick={() => setSelectedId(event.id)}
+                onClick={() => {
+                  playSound('selection')
+                  setSelectedId(event.id)
+                }}
               >
                 <span>{index + 1} · T+{triggerSecond.get(event.id) ?? 0} SEC · {event.phase.toUpperCase()}</span>
                 <strong>{event.title}</strong>

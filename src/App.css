@@ -4399,3 +4399,30 @@
   font-size: 10px;
   line-height: 1.5;
 }
+
+/* ---- Sound toggle in the top bar ---- */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-right .topbar-label span {
+  margin-left: 11px;
+  color: var(--lime);
+}
+
+.topbar-right .sound-toggle {
+  letter-spacing: 0.8px;
+}
+
+@media (max-width: 650px) {
+  .topbar-right .topbar-label {
+    display: none;
+  }
+}
+
+.topbar-right > .topbar-label {
+  margin-left: 0;
+  color: var(--quiet);
+}

@@ -31,6 +31,8 @@ import horizonsCache from './data/horizons2027.json'
 import { SpacecraftSchematic } from './MissionVisuals'
 import type { Lunar3DPart } from './lunar3dTypes'
 import type { MissionSubsystem } from './missionSubsystems'
+import { playSound } from './missionAudio'
+import { SoundControls } from './SoundControls'
 import './App.css'
 
 type Category = 'instrument' | ComponentCategory
@@ -158,7 +160,10 @@ function NonInstrumentOptionGrid({
               name={categoryId}
               value={option.id}
               checked={checked}
-              onChange={() => onSelect(option.id)}
+              onChange={() => {
+                playSound('selection')
+                onSelect(option.id)
+              }}
             />
             <span className="option-top"><span className="radio-indicator" aria-hidden="true" /><span className="option-cost">{formatCost(option.cost)} · ILLUSTRATIVE</span></span>
             <span className="option-name">{option.name}</span>
@@ -290,7 +295,7 @@ function App() {
           <span>MARGIN<span className="wordmark-period">.</span></span>
         </a>
         <div className="topbar-center"><span className="status-dot" /> NASA SPACE APPS CHALLENGE</div>
-        <div className="topbar-right">MISSION CONTROL <span>01</span></div>
+        <div className="topbar-right"><SoundControls compact /><span className="topbar-label">MISSION CONTROL <span>01</span></span></div>
       </header>
 
       {displayedScreen === 'briefing' ? (
@@ -305,7 +310,7 @@ function App() {
               <button
                 className="primary-button"
                 type="button"
-                onClick={() => setScreen(missionState?.status === 'complete' ? 'review' : missionState ? 'simulation' : 'builder')}
+                onClick={() => { playSound('confirm'); setScreen(missionState?.status === 'complete' ? 'review' : missionState ? 'simulation' : 'builder') }}
               >
                 {missionState?.status === 'complete' ? 'Review Mission' : missionState ? 'Resume Mission' : 'Start Mission'} <span aria-hidden="true">↗</span>
               </button>
@@ -403,6 +408,7 @@ function App() {
                                   disabled={disabled}
                                   aria-describedby="instrument-selection-help"
                                   onChange={() => {
+                                    playSound('selection')
                                     setHighlightedSubsystem('science')
                                     setHighlightedPartId(
                                       selectedInstrumentIds.includes(option.id)
@@ -529,7 +535,7 @@ function App() {
                 <p className="recharge-note">Battery recharge: {evaluation.recharge.surplusW} W sunlit surplus refills {evaluation.batteryCapacityWh} Wh in about {evaluation.recharge.hoursToFull.toFixed(1)} h. Illustrative.</p>
               )}
               <div className="summary-footnote">Spacecraft limits, component specifications, mission costs, and balancing estimates are illustrative game values. NASA source links describe real instrument capabilities only.</div>
-              <button className="primary-button launch-button" type="button" disabled={!isWithinLimits} onClick={() => setScreen('launch')}>
+              <button className="primary-button launch-button" type="button" disabled={!isWithinLimits} onClick={() => { playSound('confirm'); setScreen('launch') }}>
                 {isWithinLimits ? 'Confirm spacecraft' : 'Adjust your design'} <span aria-hidden="true">↗</span>
               </button>
             </aside>
@@ -570,7 +576,7 @@ function App() {
                           value={window.date}
                           aria-label={`${window.dateLabel}, ${formatDistance(window.distanceKm)}, ${window.oneWayLightTimeSeconds.toFixed(2)} seconds one-way light-time, ${window.propulsionPenaltyMps} meters per second illustrative propulsion penalty`}
                           checked={selected}
-                          onChange={() => setSelectedLaunchWindow(window)}
+                          onChange={() => { playSound('selection'); setSelectedLaunchWindow(window) }}
                         />
                         <span className="window-card-top">
                           <span className="window-radio-indicator" aria-hidden="true" />
@@ -621,7 +627,7 @@ function App() {
                 Orbital geometry: NASA/JPL Horizons — cached ephemeris data ·{' '}
                 <a href="https://ssd-api.jpl.nasa.gov/doc/horizons.html" target="_blank" rel="noreferrer">Horizons documentation</a>
               </p>
-              <button className="primary-button launch-button" type="button" onClick={() => setScreen('ready')}>
+              <button className="primary-button launch-button" type="button" onClick={() => { playSound('confirm'); setScreen('ready') }}>
                 Confirm Launch Window <span aria-hidden="true">↗</span>
               </button>
             </aside>
@@ -678,7 +684,7 @@ function App() {
           </div>
           <div className="ready-actions">
             <button className="back-button" type="button" onClick={() => setScreen('builder')}><span aria-hidden="true">←</span> EDIT SPACECRAFT</button>
-            <button className="primary-button" type="button" onClick={() => startMission()}>
+            <button className="primary-button" type="button" onClick={() => { playSound('confirm'); startMission() }}>
               Begin Mission <span aria-hidden="true">↗</span>
             </button>
             <p className="ready-seed">SCENARIO SEED {missionSeed}</p>

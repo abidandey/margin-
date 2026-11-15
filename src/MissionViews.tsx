@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   getCurrentMissionEvent,
   getMissionPowerHeadroom,
@@ -15,7 +15,8 @@ import { getScienceOpportunity } from './scienceData'
 import { MissionOrbitalVisualization, SpacecraftSchematic } from './MissionVisuals'
 import { Lunar3DPanel } from './Lunar3DPanel'
 import type { Lunar3DPart } from './lunar3dTypes'
-import { playMissionSound } from './missionAudio'
+import { playSound, playSoundOnce, type MissionSound } from './missionAudio'
+import { SoundControls } from './SoundControls'
 import { getAffectedSubsystem } from './missionSubsystems'
 import { FailureReviewBoard } from './ReviewBoard'
 import { TelemetryHistory } from './TelemetryHistory'
@@ -184,46 +185,6 @@ function MissionTelemetry({ state }: { state: MissionState }) {
   )
 }
 
-function MissionSoundControls({
-  muted,
-  onMutedChange,
-  volume,
-  onVolumeChange,
-}: {
-  muted: boolean
-  onMutedChange: (muted: boolean) => void
-  volume: number
-  onVolumeChange: (volume: number) => void
-}) {
-  const audioSupported = typeof window !== 'undefined' && 'AudioContext' in window
-  return (
-    <div className="mission-audio-controls" role="group" aria-label="Mission sound settings">
-      <button
-        type="button"
-        className="sound-toggle"
-        aria-pressed={!muted}
-        disabled={!audioSupported}
-        onClick={() => onMutedChange(!muted)}
-      >
-        {muted ? 'UNMUTE SOUND' : 'MUTE SOUND'}
-      </button>
-      <label>
-        VOLUME
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={volume}
-          aria-label="Sound volume"
-          disabled={!audioSupported}
-          onChange={(event) => onVolumeChange(Number(event.currentTarget.value))}
-        />
-      </label>
-    </div>
-  )
-}
-
 export function MissionSimulationView({ state, parts, selectedPowerId, onResolve }: MissionSimulationViewProps) {
   const activeEvent = getCurrentMissionEvent(state)
   const phaseIndex = MISSION_PHASES.indexOf(state.phase)
@@ -233,26 +194,31 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
   const scienceOpportunity = activeEvent?.type === 'science'
     ? getScienceOpportunity(activeEvent.scienceOpportunityId)
     : null
-  const [muted, setMuted] = useState(true)
-  const [volume, setVolume] = useState(0.35)
   const previousPhase = useRef(state.phase)
   const previousActiveEventId = useRef(state.activeEventId)
   const previousResolvedCount = useRef(state.resolvedEvents.length)
 
   useEffect(() => {
-    if (state.phase !== previousPhase.current && state.elapsedSeconds > 0 && !muted) {
-      playMissionSound('telemetry', volume)
+    if (state.phase !== previousPhase.current && state.elapsedSeconds > 0) {
+      playSound('telemetry')
     }
-    if (state.resolvedEvents.length > previousResolvedCount.current && !muted) {
-      playMissionSound('outcome', volume)
+    if (state.resolvedEvents.length > previousResolvedCount.current) {
+      // The outcome sound says whether the decision helped or hurt the spacecraft.
+      const latest = state.resolvedEvents[state.resolvedEvents.length - 1]
+      const hurt = latest.healthDelta < 0 || latest.deltaVShortfallMps > 0
+      const helped = latest.scienceDelta > 0 || latest.dataReturnedDelta > 0 || latest.healthDelta > 0
+      playSound(hurt ? 'outcome-bad' : helped ? 'outcome-good' : 'outcome')
     }
-    if (state.activeEventId && state.activeEventId !== previousActiveEventId.current && !muted) {
-      playMissionSound('alert', volume)
+    if (state.activeEventId && state.activeEventId !== previousActiveEventId.current) {
+      const event = getCurrentMissionEvent(state)
+      playSound(event ? (`alert-${event.type}` as MissionSound) : 'alert')
     }
     previousPhase.current = state.phase
     previousActiveEventId.current = state.activeEventId
     previousResolvedCount.current = state.resolvedEvents.length
-  }, [muted, state.activeEventId, state.elapsedSeconds, state.phase, state.resolvedEvents.length, volume])
+    // `state` is read only when one of the listed fields changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.activeEventId, state.elapsedSeconds, state.phase, state.resolvedEvents.length])
 
   return (
     <section className="simulation-view" aria-labelledby="simulation-title">
@@ -263,7 +229,7 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
           <p className="builder-intro">Seed {state.seed} · 75-second compressed orbital mission · illustrative game rules</p>
         </div>
         <div className="simulation-heading-tools">
-          <MissionSoundControls muted={muted} onMutedChange={setMuted} volume={volume} onVolumeChange={setVolume} />
+          <SoundControls />
           <div className="sim-clock" aria-label={`${state.elapsedSeconds} of ${MISSION_DURATION_SECONDS} mission seconds elapsed`}>
             <span>MISSION ELAPSED</span>
             <strong>{state.elapsedSeconds}<small> / {MISSION_DURATION_SECONDS} SEC</small></strong>
@@ -325,7 +291,7 @@ export function MissionSimulationView({ state, parts, selectedPowerId, onResolve
                       type="button"
                       key={choice.id}
                       onClick={() => {
-                        if (!muted) playMissionSound('selection', volume)
+                        playSound('selection')
                         onResolve(activeEvent.id, choice.id)
                       }}
                     >
@@ -415,8 +381,13 @@ export function MissionReviewView({
   onRedesign,
   onNewScenario,
 }: MissionReviewViewProps) {
-  const [muted, setMuted] = useState(true)
-  const [volume, setVolume] = useState(0.35)
+  useEffect(() => {
+    const sound: MissionSound = debrief.result === 'Success'
+      ? 'mission-success'
+      : debrief.result === 'Partial Success' ? 'mission-partial' : 'mission-failure'
+    // Keyed by the run, so it plays once per mission and not on every re-render.
+    playSoundOnce(`${debrief.seed}:${debrief.result}:${debrief.scores.science}:${debrief.scores.reliability}:${debrief.design.costK}`, sound)
+  }, [debrief])
   const sameSeedComparison = previousRun?.seed === debrief.seed ? previousRun : null
   const previousEvents = new Map((sameSeedComparison?.eventResults ?? []).map((event) => [event.id, event]))
   const componentRows = sameSeedComparison
@@ -575,7 +546,7 @@ export function MissionReviewView({
         </div>
         <div className="review-heading-tools">
           <span className={`result-badge result-${debrief.result.toLowerCase().replace(' ', '-')}`}>{debrief.result.toUpperCase()}</span>
-          <MissionSoundControls muted={muted} onMutedChange={setMuted} volume={volume} onVolumeChange={setVolume} />
+          <SoundControls />
         </div>
       </div>
 
@@ -832,7 +803,7 @@ export function MissionReviewView({
           className="primary-button"
           type="button"
           onClick={() => {
-            if (!muted) playMissionSound('selection', volume)
+            playSound('confirm')
             onRedesign()
           }}
         >Redesign Spacecraft <span aria-hidden="true">↗</span></button>
@@ -840,7 +811,7 @@ export function MissionReviewView({
           className="secondary-button"
           type="button"
           onClick={() => {
-            if (!muted) playMissionSound('selection', volume)
+            playSound('confirm')
             onNewScenario()
           }}
         >New Scenario · Seed {nextSeed} <span aria-hidden="true">↻</span></button>
