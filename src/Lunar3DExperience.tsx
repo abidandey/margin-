@@ -1,9 +1,11 @@
 import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ErrorInfo, ReactNode, RefObject } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Lightformer, Line, OrbitControls, RoundedBox, useGLTF } from '@react-three/drei'
+import { Environment, Lightformer, Line, OrbitControls, RoundedBox, Stars, useGLTF } from '@react-three/drei'
 import {
   ACESFilmicToneMapping,
+  AdditiveBlending,
+  BackSide,
   Box3,
   CanvasTexture,
   DoubleSide,
@@ -13,6 +15,7 @@ import {
   SRGBColorSpace,
   Vector3,
 } from 'three'
+import type { DirectionalLight, HemisphereLight } from 'three'
 import type { MissionEventType, MissionState } from './missionSimulation'
 import { getCurrentMissionEvent } from './missionSimulation'
 import { getAffectedSubsystem, type MissionSubsystem } from './missionSubsystems'
@@ -233,6 +236,72 @@ function LunarAsset({ onLoaded }: { onLoaded: () => void }) {
         </group>
       </group>
     </>
+  )
+}
+
+// Earth drawn in code: oceans, land, polar caps and cloud bands on a small canvas. Illustrative, not a map.
+function createEarthTexture() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 256
+  const context = canvas.getContext('2d')
+  if (!context) return null
+  let seed = 11
+  const random = () => {
+    seed = (seed * 16807) % 2147483647
+    return seed / 2147483647
+  }
+  const ocean = context.createLinearGradient(0, 0, 0, canvas.height)
+  ocean.addColorStop(0, '#173f6b')
+  ocean.addColorStop(0.5, '#1f5f96')
+  ocean.addColorStop(1, '#173f6b')
+  context.fillStyle = ocean
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  const land = ['#3f6b3a', '#56773f', '#7a7448', '#8c7d55', '#2f5a35']
+  for (let index = 0; index < 34; index += 1) {
+    context.fillStyle = land[index % land.length]
+    context.globalAlpha = 0.86
+    context.beginPath()
+    context.ellipse(random() * canvas.width, 46 + random() * 164, 10 + random() * 38, 6 + random() * 22, random() * Math.PI, 0, Math.PI * 2)
+    context.fill()
+  }
+  context.globalAlpha = 0.92
+  context.fillStyle = '#eef3f6'
+  context.fillRect(0, 0, canvas.width, 13)
+  context.fillRect(0, canvas.height - 15, canvas.width, 15)
+  context.fillStyle = '#ffffff'
+  for (let index = 0; index < 70; index += 1) {
+    context.globalAlpha = 0.16 + random() * 0.3
+    context.beginPath()
+    context.ellipse(random() * canvas.width, 20 + random() * 216, 16 + random() * 52, 2 + random() * 6, (random() - 0.5) * 0.5, 0, Math.PI * 2)
+    context.fill()
+  }
+  context.globalAlpha = 1
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  return texture
+}
+
+function Earth({ reducedMotion }: { reducedMotion: boolean }) {
+  const texture = useMemo(() => createEarthTexture(), [])
+  const globeRef = useRef<Mesh>(null)
+  useEffect(() => () => texture?.dispose(), [texture])
+  useFrame((_, delta) => {
+    if (globeRef.current && !reducedMotion) globeRef.current.rotation.y += delta * 0.03
+  })
+
+  return (
+    <group position={EARTH_POSITION}>
+      <mesh ref={globeRef} rotation={[0.35, 0.6, 0.18]}>
+        <sphereGeometry args={[0.32, 48, 32]} />
+        <meshStandardMaterial map={texture} color={texture ? '#ffffff' : '#557a90'} roughness={0.72} metalness={0.04} />
+      </mesh>
+      {/* Thin blue haze around the limb. */}
+      <mesh scale={1.09}>
+        <sphereGeometry args={[0.32, 32, 24]} />
+        <meshBasicMaterial color="#6fb4ff" transparent opacity={0.2} side={BackSide} blending={AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </group>
   )
 }
 
@@ -1042,9 +1111,9 @@ function SignalPulse({
 
 // Soft studio lights that exist only as reflections, so foil, solar cells and metal read as real surfaces.
 // Built from shapes in code: nothing is downloaded.
-function StudioReflections() {
+function StudioReflections({ intensity }: { intensity: number }) {
   return (
-    <Environment resolution={256} frames={1} environmentIntensity={0.6}>
+    <Environment resolution={256} frames={1} environmentIntensity={intensity}>
       <Lightformer form="rect" intensity={3.2} color="#fff3dc" position={[-5, 6, 6]} scale={[9, 9, 1]} target={[0, 0, 0]} />
       <Lightformer form="rect" intensity={1.1} color="#9ab2c3" position={[6, 1, -5]} scale={[6, 4, 1]} target={[0, 0, 0]} />
       <Lightformer form="ring" intensity={1.6} color="#ffffff" position={[0, 5, -6]} scale={4} target={[0, 0, 0]} />
@@ -1112,6 +1181,10 @@ function LunarScene({
   onHoverSubsystem: (subsystem: MissionSubsystem | null) => void
 }) {
   const shipRef = useRef<Object3D>(null)
+  const sunRef = useRef<DirectionalLight>(null)
+  const skyRef = useRef<HemisphereLight>(null)
+  // In a full eclipse the Moon blocks the Sun, so the whole scene falls into shadow.
+  const inEclipse = eventType === 'eclipse'
   const [playerHasControl, setPlayerHasControl] = useState(false)
   const maxCameraDistance = viewMode === 'orbit' ? 12 : 9
   const orbitPoints = useMemo(() => Array.from({ length: 97 }, (_, index) => {
@@ -1122,6 +1195,9 @@ function LunarScene({
   const scienceLine = useMemo(() => [new Vector3(), scienceTarget], [scienceTarget])
 
   useFrame(({ clock }, delta) => {
+    const ease = reducedMotion ? 1 : 1 - Math.exp(-delta * 2.4)
+    if (sunRef.current) sunRef.current.intensity = MathUtils.lerp(sunRef.current.intensity, inEclipse ? 0.14 : 3.1, ease)
+    if (skyRef.current) skyRef.current.intensity = MathUtils.lerp(skyRef.current.intensity, inEclipse ? 0.16 : 0.48, ease)
     if (!shipRef.current) return
     if (viewMode === 'spacecraft') {
       shipRef.current.position.set(0, 0, 0)
@@ -1137,9 +1213,10 @@ function LunarScene({
   return (
     <>
       <color attach="background" args={['#070b10']} />
-      <ambientLight intensity={0.26} />
-      <hemisphereLight args={['#c8d8e1', '#101820', 0.48]} />
+      <ambientLight intensity={inEclipse ? 0.1 : 0.26} />
+      <hemisphereLight ref={skyRef} args={['#c8d8e1', '#101820', 0.48]} />
       <directionalLight
+        ref={sunRef}
         position={[-6, 8, 7]}
         intensity={3.1}
         castShadow
@@ -1148,7 +1225,8 @@ function LunarScene({
       />
       <directionalLight position={[5, 1.5, -4]} intensity={0.58} color="#9ab2c3" />
       <NaturalStarfield />
-      <StudioReflections />
+      <Stars radius={36} depth={14} count={1600} factor={2.4} saturation={0} fade speed={0} />
+      <StudioReflections intensity={inEclipse ? 0.14 : 0.6} />
       <CameraIntro enabled={!reducedMotion} maxDistance={maxCameraDistance} interrupted={playerHasControl} />
       {viewMode === 'orbit' && (
         <>
@@ -1170,10 +1248,7 @@ function LunarScene({
               gapSize={0.1}
             />
           )}
-          <mesh position={EARTH_POSITION}>
-            <sphereGeometry args={[0.32, 24, 20]} />
-            <meshStandardMaterial color="#557a90" roughness={0.78} metalness={0.08} />
-          </mesh>
+          <Earth reducedMotion={reducedMotion} />
           <mesh position={[EARTH_POSITION.x - 0.04, EARTH_POSITION.y + 0.2, EARTH_POSITION.z + 0.03]}>
             <sphereGeometry args={[0.035, 10, 10]} />
             <meshBasicMaterial color="#b4d2a0" />

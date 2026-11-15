@@ -52,6 +52,7 @@ MARGIN intentionally separates **real NASA reference information** from **illust
 | [NASA Moon Water and Ices](https://science.nasa.gov/moon/moon-water-and-ices/) | Scientific context for lunar water investigations and the need to distinguish different observations. | An elevated hydrogen signal alone does not prove a usable ice deposit. |
 | [NASA/JPL Horizons](https://ssd-api.jpl.nasa.gov/doc/horizons.html) | Cached Earth-center–Moon-center distances and one-way down-leg light-times for the selectable 2027 launch dates. | Center-to-center geometry is **not** a spacecraft trajectory solution. Distance alone does **not** determine an optimal launch window or fuel consumption. |
 | [NASA Scientific Visualization Studio — Moon 3D Models for Web](https://svs.gsfc.nasa.gov/14959/) | Locally bundled Moon model based on Lunar Reconnaissance Orbiter observations. | Spacecraft orbit placement, camera framing, event visuals, and target markers are schematic. |
+| [NASA NSSDCA Moon Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html) | The Moon's gravitational parameter and mean radius, used to calculate the real orbital speed, period and longest eclipse of a 50 km lunar orbit on the launch screen. | Shown as a reference beside the game; the simulation's own event timings stay compressed and illustrative. |
 
 The lunar science references are stored in `src/data/margin-lunar-science.json`, with source URLs available alongside instrument information in the game.
 
@@ -128,6 +129,7 @@ The generated site can be previewed with `npm run preview`. GitHub Pages deploym
 | `src/scienceData.ts`, `src/data/` | NASA instrument references, illustrative science profiles, and cached Horizons observations |
 | `src/MissionViews.tsx` | Live mission and review interfaces |
 | `src/spacecraftDesign.ts` | Component catalogue and design checks; power generation (W) is separate from battery storage (Wh) and discharge limit (W) |
+| `src/lunarOrbit.ts` | Real lunar orbit figures (speed, period, longest eclipse) from NASA Moon Fact Sheet constants |
 | `src/ReviewBoard.tsx` | Selectable event timeline and cause-and-effect review |
 | `src/TelemetryHistory.tsx` | Health, science, and battery telemetry over mission time |
 | `src/Lunar3DExperience.tsx`, `src/Lunar3DPanel.tsx` | Lazily loaded 3D Moon and interactive spacecraft visualization |
@@ -151,7 +153,7 @@ The game presents numerical values alongside resource gauges, uses text labels a
 This project was developed with AI-assisted research, planning, writing, and coding. Human team members selected the concept and made the game-design and submission decisions.
 
 - **GitHub Copilot:** Iterative assistance with React/TypeScript implementation, the simulation, UI, integration, and automated testing.
-- **Claude (Anthropic):** Assistance with Failure Review Board and telemetry visualizations, 3D presentation changes, GitHub Pages deployment configuration, the power-architecture module and its regression tests, and an earlier README draft.
+- **Claude (Anthropic):** Assistance with Failure Review Board and telemetry visualizations, 3D presentation changes, GitHub Pages deployment configuration, the power-architecture module and its regression tests, the real-orbit panel, the synthesized sound effects, and an earlier README draft.
 - **ChatGPT (OpenAI):** Concept refinement, NASA research interpretation, testing and debugging guidance, review of simulation logic, and README documentation.
 
 These disclosures describe assistance, not authorship of NASA data. Refer to the project source and revision history for implementation details.

@@ -4435,3 +4435,87 @@
 .mission-summary .schematic-component-list strong {
   overflow-wrap: break-word;
 }
+
+/* ---- Real orbit check panel on the launch screen ---- */
+.real-orbit-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--lime);
+  background: #0c1118;
+}
+
+.real-orbit-panel .section-kicker {
+  margin: 0 0 8px;
+}
+
+.real-orbit-panel h3 {
+  margin: 0 0 12px;
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.real-orbit-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.real-orbit-values > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #252d37;
+  background: #0b1017;
+}
+
+.real-orbit-values dt {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.6px;
+}
+
+.real-orbit-values dd {
+  margin: 0;
+  color: var(--white);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.real-orbit-values small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.real-orbit-note {
+  margin: 0;
+  color: #bcc4cb;
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.real-orbit-note a {
+  color: var(--lime);
+}
+
+@media (max-width: 650px) {
+  .real-orbit-values {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- 3D view: darkened frame edge, drawn above the scene and below the labels ---- */
+.lunar3d-stage::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 46%, transparent 54%, rgb(2 4 8 / 0.62) 100%);
+  content: '';
+  pointer-events: none;
+}

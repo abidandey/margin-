@@ -32,6 +32,8 @@ import { SpacecraftSchematic } from './MissionVisuals'
 import type { Lunar3DPart } from './lunar3dTypes'
 import type { MissionSubsystem } from './missionSubsystems'
 import { playSound } from './missionAudio'
+import { MOON_FACT_SHEET_URL, MOON_GM_KM3_S2, MOON_RADIUS_KM, referenceOrbit } from './lunarOrbit'
+import { REFERENCE_ECLIPSE_HOURS } from './spacecraftDesign'
 import { SoundControls } from './SoundControls'
 import './App.css'
 
@@ -76,6 +78,7 @@ const instrumentOptions: InstrumentOption[] = LUNAR_SCIENCE_DATA.instruments.map
 })
 
 const DEFAULT_INSTRUMENT_IDS: ScienceInstrumentId[] = ['LEND', 'DIVINER']
+const REAL_ORBIT = referenceOrbit()
 
 const launchWindowOptions = [
   {
@@ -598,6 +601,19 @@ function App() {
                 </div>
               </fieldset>
               <p className="chart-footnote">Horizons reports center-to-center geometry, an approximation of spacecraft communication distance and delay. Propulsion penalties are separate illustrative gameplay assumptions.</p>
+              <section className="real-orbit-panel" aria-labelledby="real-orbit-title">
+                <p className="section-kicker">REAL ORBIT CHECK · COMPUTED FROM NASA LUNAR CONSTANTS</p>
+                <h3 id="real-orbit-title">Your orbiter at {REAL_ORBIT.altitudeKm} km above the Moon</h3>
+                <dl className="real-orbit-values">
+                  <div><dt>ORBITAL SPEED</dt><dd>{REAL_ORBIT.speedKmS.toFixed(2)} km/s</dd><small>v = √(GM / r)</small></div>
+                  <div><dt>ONE ORBIT</dt><dd>{Math.round(REAL_ORBIT.periodMinutes)} min</dd><small>T = 2π√(r³ / GM) · {REAL_ORBIT.orbitsPerDay.toFixed(1)} orbits a day</small></div>
+                  <div><dt>LONGEST ECLIPSE</dt><dd>{Math.round(REAL_ORBIT.maxEclipseMinutes)} min</dd><small>{Math.round(REAL_ORBIT.maxEclipseShare * 100)}% of an orbit in the Moon's shadow</small></div>
+                </dl>
+                <p className="real-orbit-note">
+                  Calculated from the Moon's gravitational parameter ({MOON_GM_KM3_S2.toLocaleString('en-US')} km³/s²) and mean radius ({MOON_RADIUS_KM} km) in the{' '}
+                  <a href={MOON_FACT_SHEET_URL} target="_blank" rel="noopener noreferrer">NASA Moon Fact Sheet</a>, for a circular orbit at the altitude of a low polar mapping orbit. The game compresses time: its eclipse event lasts {REFERENCE_ECLIPSE_HOURS * 60} minutes, shorter than this real worst case, and its mission clock runs 75 seconds.
+                </p>
+              </section>
             </section>
 
             <aside className="launch-details" aria-label="Selected launch window parameters" aria-live="polite">
