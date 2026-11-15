@@ -498,15 +498,15 @@ function App() {
                 <div className="meter"><span className={massMargin < 0 ? 'meter-over' : ''} style={{ width: `${Math.min((totals.mass / MASS_LIMIT) * 100, 100)}%` }} /></div>
               </div>
               <div className="metric" title="Sunlit power compares the spacecraft load with what the generator produces in sunlight. A battery stores energy and is never counted as generation.">
-                <div className="metric-heading"><span>SUNLIT POWER · LOAD / GENERATION</span><span className={powerMargin < 0 ? 'over-limit' : ''}>{totals.draw} <small>/ {totals.output} W · {formatMargin(powerMargin, 'W')}</small></span></div>
+                <div className="metric-heading"><span>SUNLIT POWER</span><span className={powerMargin < 0 ? 'over-limit' : ''}>{totals.draw} <small>/ {totals.output} W · {formatMargin(powerMargin, 'W')}</small></span></div>
                 <div className="meter"><span className={powerMargin < 0 ? 'meter-over' : ''} style={{ width: `${totals.output ? Math.min((totals.draw / totals.output) * 100, 100) : 0}%` }} /></div>
               </div>
               <div className="metric" title="Eclipse power compares the spacecraft load with what is available in a full eclipse: generator eclipse output plus the battery's discharge limit, in watts.">
-                <div className="metric-heading"><span>ECLIPSE POWER · LOAD / AVAILABLE</span><span className={eclipse.powerShortfallW > 0 ? 'over-limit' : ''}>{eclipse.demandW} <small>/ {eclipse.powerAvailableW} W · {eclipse.generationW} W GEN + {evaluation.batteryDischargeLimitW} W BATT</small></span></div>
+                <div className="metric-heading"><span>ECLIPSE POWER</span><span className={eclipse.powerShortfallW > 0 ? 'over-limit' : ''}>{eclipse.demandW} <small>/ {eclipse.powerAvailableW} W · {eclipse.generationW} W GEN + {evaluation.batteryDischargeLimitW} W BATT</small></span></div>
                 <div className="meter"><span className={eclipse.powerShortfallW > 0 ? 'meter-over' : ''} style={{ width: `${eclipse.powerAvailableW ? Math.min((eclipse.demandW / eclipse.powerAvailableW) * 100, 100) : 100}%` }} /></div>
               </div>
               <div className="metric" title="Eclipse energy compares the watt-hours the battery must supply over the 0.5 hour reference eclipse with the watt-hours it stores.">
-                <div className="metric-heading"><span>ECLIPSE ENERGY · NEEDED / STORED</span><span className={eclipse.energyShortfallWh > 0 ? 'over-limit' : ''}>{eclipse.energyNeededWh} <small>/ {eclipse.energyAvailableWh} Wh · {eclipse.hours} H{evaluation.batteryCapacityWh > 0 ? '' : ' · NO BATTERY'}</small></span></div>
+                <div className="metric-heading"><span>ECLIPSE ENERGY</span><span className={eclipse.energyShortfallWh > 0 ? 'over-limit' : ''}>{eclipse.energyNeededWh} <small>/ {eclipse.energyAvailableWh} Wh · {eclipse.hours} H{evaluation.batteryCapacityWh > 0 ? '' : ' · NO BATTERY'}</small></span></div>
                 <div className="meter"><span className={eclipse.energyShortfallWh > 0 ? 'meter-over' : ''} style={{ width: `${eclipse.energyAvailableWh ? Math.min((eclipse.energyNeededWh / eclipse.energyAvailableWh) * 100, 100) : eclipse.energyNeededWh > 0 ? 100 : 0}%` }} /></div>
               </div>
               <div className="metric" title="Budget margin is the mission budget still available before reaching $2.40M.">
@@ -520,9 +520,9 @@ function App() {
               {isWithinLimits && evaluation.advisories.length > 0 && (
                 <div className="limit-status status-advisory" role="status">
                   <span aria-hidden="true">!</span>
-                  <span>
+                  <p>
                     <strong>Eclipse risk, launch allowed.</strong> {evaluation.advisories.join('; ')}. In flight you can shed load or hibernate instruments; a shortfall costs spacecraft health.
-                  </span>
+                  </p>
                 </div>
               )}
               {selectedBattery && evaluation.recharge.possible && evaluation.recharge.hoursToFull !== null && (

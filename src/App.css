@@ -4369,10 +4369,23 @@
 /* ---- Power architecture: eclipse advisory and recharge note ---- */
 .limit-status.status-advisory {
   align-items: flex-start;
-  border-color: #6b5a2e;
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid #6b5a2e;
   background: #1a1710;
   color: #e9d39a;
   line-height: 1.5;
+}
+
+/* The round badge is the first child only; the message beside it must be free to wrap. */
+.limit-status.status-advisory > span {
+  flex: none;
+}
+
+.limit-status.status-advisory > p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .limit-status.status-advisory strong {
