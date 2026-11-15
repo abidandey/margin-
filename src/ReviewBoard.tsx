@@ -52,13 +52,14 @@ function effectsOf(event: MissionEventResult) {
   if (Math.round(event.dataReturnedDelta) !== 0) {
     effects.push({ label: 'Data returned', value: signed(event.dataReturnedDelta, 'pts'), bad: event.dataReturnedDelta < 0 })
   }
+  if (event.eclipsePowerFlow) effects.push({ label: 'Battery used', value: `${Math.round(event.eclipsePowerFlow.batteryEnergyUsedWh)} Wh`, bad: false })
   if (Math.round(event.powerReliefDeltaW) !== 0) {
     effects.push({ label: 'Load shed', value: signed(event.powerReliefDeltaW, 'W'), bad: false })
   }
   return effects
 }
 
-function EffectChips({ event }: { event: MissionEventResult }) {
+export function EffectChips({ event }: { event: MissionEventResult }) {
   const effects = effectsOf(event)
   if (effects.length === 0) return <p className="board-no-effect">No measurable change to the spacecraft.</p>
   return (

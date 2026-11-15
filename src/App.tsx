@@ -1,3 +1,4 @@
+import { getRetryFocus } from './guidedMission'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { MissionReviewView, MissionSimulationView } from './MissionViews'
 import { Lunar3DPanel } from './Lunar3DPanel'
@@ -6,6 +7,7 @@ import {
   getNextMissionSeed,
   missionReducer,
   type MissionDebrief,
+  type MissionTelemetry,
 } from './missionSimulation'
 import {
   LUNAR_SCIENCE_DATA,
@@ -193,6 +195,10 @@ function NonInstrumentOptionGrid({
 
 function App() {
   const [screen, setScreen] = useState<'briefing' | 'builder' | 'launch' | 'ready' | 'simulation' | 'review'>('briefing')
+  const [guided, setGuided] = useState(false)
+  const [beforeDecision, setBeforeDecision] = useState<MissionTelemetry | null>(null)
+  const [showOutcome, setShowOutcome] = useState(false)
+  const [retryCategory, setRetryCategory] = useState<Category | null>(null)
   const [selection, setSelection] = useState<ComponentSelection>(DEFAULT_SELECTION)
   const [selectedInstrumentIds, setSelectedInstrumentIds] = useState<ScienceInstrumentId[]>(DEFAULT_INSTRUMENT_IDS)
   const [highlightedSubsystem, setHighlightedSubsystem] = useState<MissionSubsystem>('science')
@@ -266,20 +272,37 @@ function App() {
   const displayedScreen = screen === 'simulation' && missionState?.status === 'complete' ? 'review' : screen
 
   useEffect(() => {
-    if (screen !== 'simulation' || missionState?.status !== 'running') return
+    if (showOutcome || screen !== 'simulation' || missionState?.status !== 'running') return
     const intervalId = window.setInterval(() => dispatchMission({ type: 'TICK' }), 1000)
     return () => window.clearInterval(intervalId)
-  }, [screen, missionState?.status])
+  }, [screen, missionState?.status, showOutcome])
 
   const startMission = (seed = missionSeed) => {
     if (!missionDesign) return
+    setShowOutcome(false)
     dispatchMission({ type: 'START', seed, design: missionDesign })
     setMissionSeed(seed)
     setScreen('simulation')
   }
 
+  const startGuided = () => {
+    const starter = { ...DEFAULT_SELECTION, battery: 'high-density', propulsion: 'bipropellant' }
+    const design = toMissionDesign({ ...starter, instrumentIds: DEFAULT_INSTRUMENT_IDS }, launchWindows[2])
+    if (!design) return
+    setSelection(starter)
+    setSelectedInstrumentIds(DEFAULT_INSTRUMENT_IDS)
+    setSelectedLaunchWindow(launchWindows[2])
+    setGuided(true)
+    setShowOutcome(false)
+    setPreviousRun(null)
+    setMissionSeed(104729)
+    dispatchMission({ type: 'START', seed: 104729, design })
+    setScreen('simulation')
+  }
+
   const redesignSpacecraft = () => {
     if (currentDebrief) setPreviousRun(currentDebrief)
+    if (currentDebrief) setRetryCategory(getRetryFocus(currentDebrief).category)
     setScreen('builder')
   }
 
@@ -289,6 +312,13 @@ function App() {
     setPreviousRun(null)
     startMission(seed)
   }
+
+  useEffect(() => {
+    if (screen === 'builder' && retryCategory) {
+      document.getElementById(`component-${retryCategory}`)?.scrollIntoView({ block: 'start' })
+      document.getElementById(`component-${retryCategory}`)?.focus({ preventScroll: true })
+    }
+  }, [screen, retryCategory])
 
   return (
     <main className="app-shell">
@@ -308,16 +338,12 @@ function App() {
               <p className="eyebrow"><span className="eyebrow-line" /> LUNAR EXPLORATION / MISSION 01</p>
               <h1 id="briefing-title">The next great<br />discovery is on<br /><span>the Moon.</span></h1>
               <p className="hero-description">
-                Design a spacecraft to investigate the Moon’s south pole. Find where water ice hides—and help shape the future of lunar exploration.
+                Keep your explorer safe, collect clues to possible Moon ice, and send them home. You make four decisions; we provide a ready-built spacecraft.
               </p>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => { playSound('confirm'); setScreen(missionState?.status === 'complete' ? 'review' : missionState ? 'simulation' : 'builder') }}
-              >
-                {missionState?.status === 'complete' ? 'Review Mission' : missionState ? 'Resume Mission' : 'Start Mission'} <span aria-hidden="true">↗</span>
-              </button>
-              <p className="button-note">YOUR MISSION STARTS WITH A SINGLE DECISION</p>
+              <button className="primary-button" type="button" onClick={() => { playSound('confirm'); startGuided() }}>START GUIDED MISSION <span aria-hidden="true">↗</span></button>
+              <button className="secondary-button entry-secondary" type="button" onClick={() => { setGuided(false); setScreen('builder') }}>ADVANCED SPACECRAFT BUILDER</button>
+              {missionState && <button className="back-button" type="button" onClick={() => setScreen(missionState.status === 'complete' ? 'review' : 'simulation')}>Return to current mission</button>}
+              <p className="button-note">READY-BUILT EXPLORER · FOUR DECISIONS · NO EXPERIENCE NEEDED</p>
             </div>
             <div className="lunar-scene" role="img" aria-label="Illustration of the Moon's south pole beneath a star field">
               <div className="scene-coordinate">89° 42′ S<br />63° 12′ E</div>
@@ -370,6 +396,7 @@ function App() {
             <span className="spec-note">NASA FACTS SOURCED · SPECS ILLUSTRATIVE</span>
           </div>
 
+          {retryCategory && previousRun && <aside className="retry-brief"><strong>Same scenario · seed {missionSeed}</strong><p>{getRetryFocus(previousRun).text}</p><p>Change one component or response at a time to understand the difference.</p><button className="primary-button" disabled={!missionDesign} onClick={() => { setShowOutcome(false); startMission() }}>RETRY SAME SCENARIO →</button></aside>}
           <Lunar3DPanel
             mode="builder"
             parts={visualizationParts}
@@ -386,11 +413,12 @@ function App() {
           <div className="builder-layout">
             <div className="component-groups">
               {categories.map((category) => (
-                <fieldset className="component-group" key={category.id}>
+                <fieldset className="component-group" id={`component-${category.id}`} tabIndex={-1} key={category.id}>
                   <legend>
                     <span className="group-eyebrow">{category.eyebrow}</span>
                     <span className="group-title">{category.title}</span>
                   </legend>
+                  {retryCategory === category.id && previousRun && <div className="component-retry"><p>{getRetryFocus(previousRun).text}</p><button className="primary-button" disabled={!missionDesign} onClick={() => { setShowOutcome(false); startMission() }}>RETRY SAME SCENARIO →</button><p>Keep this spacecraft and change your response, or edit components below. Mass, power and budget limits still apply.</p></div>}
                   {category.id === 'instrument' ? (
                     <>
                       <p className="instrument-selection-help" id="instrument-selection-help">
@@ -710,10 +738,20 @@ function App() {
         </section>
       ) : displayedScreen === 'simulation' && missionState ? (
         <MissionSimulationView
+          guided={guided}
+          showOutcome={showOutcome}
+          beforeDecision={beforeDecision}
+          onContinue={() => setShowOutcome(false)}
+          onAdvance={() => {
+            if (missionState.status !== 'running') return
+            const next = missionState.scenario.events.find(event => !missionState.resolvedEvents.some(result => result.id === event.id))
+            const target = next?.triggerSecond ?? 75
+            for (let second = missionState.elapsedSeconds; second < target; second++) dispatchMission({ type: 'TICK' })
+          }}
           state={missionState}
           parts={visualizationParts}
           selectedPowerId={selection.power}
-          onResolve={(eventId, choiceId) => dispatchMission({ type: 'RESOLVE_EVENT', eventId, choiceId })}
+          onResolve={(eventId, choiceId) => { setBeforeDecision(missionState.telemetry); dispatchMission({ type: 'RESOLVE_EVENT', eventId, choiceId }); if (guided) setShowOutcome(true) }}
         />
       ) : displayedScreen === 'review' && currentDebrief ? (
         <MissionReviewView

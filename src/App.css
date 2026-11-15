@@ -4519,3 +4519,34 @@
   content: '';
   pointer-events: none;
 }
+
+/* Guided flight keeps the next decision ahead of optional engineering views. */
+.entry-secondary { display: block; margin-top: 12px; }
+.guided-status { display: flex; flex-wrap: wrap; gap: 12px 22px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+.guided-status > strong, .guided-status > small { flex-basis: 100%; }
+.guided-status > small { color: var(--muted); }
+.is-guided .simulation-layout { display: block; }
+.is-guided .simulation-main { display: flex; flex-direction: column; }
+.is-guided .event-control { order: -2; margin-top: 0; }
+.is-guided .resolved-event-log { order: -1; }
+.is-guided .flight-details, .is-guided .telemetry-details { margin-top: 14px; }
+.flight-details > summary, .telemetry-details > summary, .event-control details > summary { padding: 12px; color: var(--lime); cursor: pointer; font-size: 12px; }
+.is-guided .mission-choice { min-height: 90px; }
+.is-guided .choice-copy > span { display: block; font-size: 13px; line-height: 1.5; }
+.is-guided .event-description { max-width: 800px; font-size: 16px; }
+.retry-brief { padding: 20px; margin: 18px 0; border: 1px solid var(--lime); background: var(--panel); scroll-margin-top: 20px; }
+.retry-brief p, .decision-outcome > p { font-size: 14px; line-height: 1.6; max-width: 850px; }
+.component-group { scroll-margin-top: 20px; }
+.decision-outcome { animation: guided-result 250ms ease-out; }
+@keyframes guided-result { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .decision-outcome { animation: none; } }
+@media (min-width: 950px) {
+  .is-guided .simulation-heading { margin: 20px 0; }
+  .is-guided .simulation-heading h1 { font-size: 36px; }
+  .is-guided .simulation-heading-tools > .sound-controls { display: none; }
+  .is-guided .mission-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .is-guided .mission-choice { align-items: flex-start; padding: 14px; }
+  .is-guided .choice-copy { gap: 8px; }
+  .is-guided .choice-arrow { display: none; }
+}
+.component-retry { margin: 0 0 14px; padding: 14px; border-left: 3px solid var(--lime); background: var(--panel); font-size: 13px; line-height: 1.6; }
