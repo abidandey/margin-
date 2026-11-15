@@ -1,0 +1,48 @@
+:root {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: #f3f2ed;
+  background: #0a0c11;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  --sans: Inter, "Segoe UI", Arial, sans-serif;
+  --heading: Inter, "Segoe UI", Arial, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #0a0c11;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  color: #11150b;
+  background: #d3f36b;
+}
+
+#root {
+  min-height: 100vh;
+}

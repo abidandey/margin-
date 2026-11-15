@@ -1,0 +1,244 @@
+{
+  "source": {
+    "name": "NASA/JPL Horizons",
+    "apiUrl": "https://ssd.jpl.nasa.gov/api/horizons.api",
+    "documentationUrl": "https://ssd-api.jpl.nasa.gov/doc/horizons.html",
+    "attribution": "Orbital geometry: NASA/JPL Horizons — cached ephemeris data",
+    "geometry": "Earth-center-to-Moon-center observer geometry; an approximation, not identical to spacecraft communication distance and delay."
+  },
+  "retrievedAt": "2026-11-15T11:47:30.888Z",
+  "query": {
+    "format": "json",
+    "COMMAND": "'301'",
+    "CENTER": "'500@399'",
+    "MAKE_EPHEM": "'YES'",
+    "EPHEM_TYPE": "'OBSERVER'",
+    "START_TIME": "'2027-01-08'",
+    "STOP_TIME": "'2027-02-06'",
+    "STEP_SIZE": "'1 d'",
+    "QUANTITIES": "'20,21'",
+    "CSV_FORMAT": "'YES'",
+    "OBJ_DATA": "'NO'",
+    "TIME_TYPE": "'UT'"
+  },
+  "units": {
+    "range": "AU",
+    "distance": "km",
+    "oneWayDownLegLightTime": "minutes",
+    "oneWayLightTime": "seconds",
+    "distanceConversionKmPerAu": 149597870.7,
+    "lightTimeConversionSecondsPerMinute": 60
+  },
+  "observations": [
+    {
+      "date": "2027-01-08",
+      "rangeAu": 0.0027170777593,
+      "oneWayDownLegLightTimeMinutes": 0.02259725,
+      "distanceKm": 406469.0473176071,
+      "oneWayLightTimeSeconds": 1.355835
+    },
+    {
+      "date": "2027-01-09",
+      "rangeAu": 0.0027122241337,
+      "oneWayDownLegLightTimeMinutes": 0.02255688,
+      "distanceKm": 405742.95526267204,
+      "oneWayLightTimeSeconds": 1.3534128
+    },
+    {
+      "date": "2027-01-10",
+      "rangeAu": 0.00270309933583,
+      "oneWayDownLegLightTimeMinutes": 0.02248099,
+      "distanceKm": 404377.9049307522,
+      "oneWayLightTimeSeconds": 1.3488594
+    },
+    {
+      "date": "2027-01-11",
+      "rangeAu": 0.00268948126367,
+      "oneWayDownLegLightTimeMinutes": 0.02236773,
+      "distanceKm": 402340.67033257725,
+      "oneWayLightTimeSeconds": 1.3420638
+    },
+    {
+      "date": "2027-01-12",
+      "rangeAu": 0.00267106987045,
+      "oneWayDownLegLightTimeMinutes": 0.02221461,
+      "distanceKm": 399586.36511024483,
+      "oneWayLightTimeSeconds": 1.3328765999999999
+    },
+    {
+      "date": "2027-01-13",
+      "rangeAu": 0.00264763043796,
+      "oneWayDownLegLightTimeMinutes": 0.02201967,
+      "distanceKm": 396079.8759193244,
+      "oneWayLightTimeSeconds": 1.3211802000000001
+    },
+    {
+      "date": "2027-01-14",
+      "rangeAu": 0.00261916813705,
+      "oneWayDownLegLightTimeMinutes": 0.02178296,
+      "distanceKm": 391821.97630796576,
+      "oneWayLightTimeSeconds": 1.3069776
+    },
+    {
+      "date": "2027-01-15",
+      "rangeAu": 0.00258611197218,
+      "oneWayDownLegLightTimeMinutes": 0.02150804,
+      "distanceKm": 386876.8444299056,
+      "oneWayLightTimeSeconds": 1.2904824
+    },
+    {
+      "date": "2027-01-16",
+      "rangeAu": 0.00254948025016,
+      "oneWayDownLegLightTimeMinutes": 0.02120338,
+      "distanceKm": 381396.8168156393,
+      "oneWayLightTimeSeconds": 1.2722028
+    },
+    {
+      "date": "2027-01-17",
+      "rangeAu": 0.00251099191923,
+      "oneWayDownLegLightTimeMinutes": 0.02088328,
+      "distanceKm": 375639.04446171434,
+      "oneWayLightTimeSeconds": 1.2529968
+    },
+    {
+      "date": "2027-01-18",
+      "rangeAu": 0.00247307942043,
+      "oneWayDownLegLightTimeMinutes": 0.02056797,
+      "distanceKm": 369967.41536831803,
+      "oneWayLightTimeSeconds": 1.2340782000000001
+    },
+    {
+      "date": "2027-01-19",
+      "rangeAu": 0.00243875485347,
+      "oneWayDownLegLightTimeMinutes": 0.02028251,
+      "distanceKm": 364832.53323840245,
+      "oneWayLightTimeSeconds": 1.2169506
+    },
+    {
+      "date": "2027-01-20",
+      "rangeAu": 0.00241129441863,
+      "oneWayDownLegLightTimeMinutes": 0.02005412,
+      "distanceKm": 360724.5106578424,
+      "oneWayLightTimeSeconds": 1.2032472
+    },
+    {
+      "date": "2027-01-21",
+      "rangeAu": 0.00239375032084,
+      "oneWayDownLegLightTimeMinutes": 0.01990821,
+      "distanceKm": 358099.9509851058,
+      "oneWayLightTimeSeconds": 1.1944926
+    },
+    {
+      "date": "2027-01-22",
+      "rangeAu": 0.00238837541544,
+      "oneWayDownLegLightTimeMinutes": 0.01986351,
+      "distanceKm": 357295.87658205186,
+      "oneWayLightTimeSeconds": 1.1918106000000002
+    },
+    {
+      "date": "2027-01-23",
+      "rangeAu": 0.00239612221805,
+      "oneWayDownLegLightTimeMinutes": 0.01992794,
+      "distanceKm": 358454.78175724106,
+      "oneWayLightTimeSeconds": 1.1956764000000002
+    },
+    {
+      "date": "2027-01-24",
+      "rangeAu": 0.00241639493279,
+      "oneWayDownLegLightTimeMinutes": 0.02009654,
+      "distanceKm": 361487.53671565355,
+      "oneWayLightTimeSeconds": 1.2057924
+    },
+    {
+      "date": "2027-01-25",
+      "rangeAu": 0.00244715246962,
+      "oneWayDownLegLightTimeMinutes": 0.02035235,
+      "distanceKm": 366088.79873339843,
+      "oneWayLightTimeSeconds": 1.221141
+    },
+    {
+      "date": "2027-01-26",
+      "rangeAu": 0.00248531837356,
+      "oneWayDownLegLightTimeMinutes": 0.02066976,
+      "distanceKm": 371798.33669616317,
+      "oneWayLightTimeSeconds": 1.2401856
+    },
+    {
+      "date": "2027-01-27",
+      "rangeAu": 0.00252734227549,
+      "oneWayDownLegLightTimeMinutes": 0.02101926,
+      "distanceKm": 378085.02294339676,
+      "oneWayLightTimeSeconds": 1.2611556000000002
+    },
+    {
+      "date": "2027-01-28",
+      "rangeAu": 0.00256973951164,
+      "oneWayDownLegLightTimeMinutes": 0.02137187,
+      "distanceKm": 384427.55919500184,
+      "oneWayLightTimeSeconds": 1.2823122
+    },
+    {
+      "date": "2027-01-29",
+      "rangeAu": 0.00260949517775,
+      "oneWayDownLegLightTimeMinutes": 0.02170251,
+      "distanceKm": 390374.92219331797,
+      "oneWayLightTimeSeconds": 1.3021506
+    },
+    {
+      "date": "2027-01-30",
+      "rangeAu": 0.00264429746705,
+      "oneWayDownLegLightTimeMinutes": 0.02199195,
+      "distanceKm": 395581.2705680834,
+      "oneWayLightTimeSeconds": 1.319517
+    },
+    {
+      "date": "2027-01-31",
+      "rangeAu": 0.00267261931857,
+      "oneWayDownLegLightTimeMinutes": 0.0222275,
+      "distanceKm": 399818.15924975695,
+      "oneWayLightTimeSeconds": 1.33365
+    },
+    {
+      "date": "2027-02-01",
+      "rangeAu": 0.00269368834672,
+      "oneWayDownLegLightTimeMinutes": 0.02240272,
+      "distanceKm": 402970.0409987153,
+      "oneWayLightTimeSeconds": 1.3441632000000001
+    },
+    {
+      "date": "2027-02-02",
+      "rangeAu": 0.00270738409714,
+      "oneWayDownLegLightTimeMinutes": 0.02251663,
+      "distanceKm": 405018.896099186,
+      "oneWayLightTimeSeconds": 1.3509978
+    },
+    {
+      "date": "2027-02-03",
+      "rangeAu": 0.00271409269028,
+      "oneWayDownLegLightTimeMinutes": 0.02257242,
+      "distanceKm": 406022.4873483225,
+      "oneWayLightTimeSeconds": 1.3543452
+    },
+    {
+      "date": "2027-02-04",
+      "rangeAu": 0.00271454046362,
+      "oneWayDownLegLightTimeMinutes": 0.02257614,
+      "distanceKm": 406089.4732865428,
+      "oneWayLightTimeSeconds": 1.3545684
+    },
+    {
+      "date": "2027-02-05",
+      "rangeAu": 0.00270962350854,
+      "oneWayDownLegLightTimeMinutes": 0.02253525,
+      "distanceKm": 405353.9072762472,
+      "oneWayLightTimeSeconds": 1.352115
+    },
+    {
+      "date": "2027-02-06",
+      "rangeAu": 0.0027002488573,
+      "oneWayDownLegLightTimeMinutes": 0.02245728,
+      "distanceKm": 403951.4794121881,
+      "oneWayLightTimeSeconds": 1.3474367999999999
+    }
+  ]
+}

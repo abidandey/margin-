@@ -1,0 +1,499 @@
+{
+  "dataset": {
+    "project": "Margin",
+    "mission": "Lunar South Pole Orbiter",
+    "dataset_version": "1.1",
+    "scope": "Orbital science and spacecraft operations only",
+    "excluded_mechanics": [
+      "Rover operations",
+      "Drilling",
+      "Surface navigation",
+      "Landing",
+      "Surface sampling"
+    ],
+    "science_principle": {
+      "verified_nasa_fact": "Different instruments provide different types of evidence about lunar water and the polar environment. Their observations must be interpreted together.",
+      "game_implementation": "Science discovery is based on combining independent measurements rather than receiving a confirmed ice discovery from a single instrument.",
+      "classification": "NASA-supported scientific principle",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/moon/moon-water-and-ices/",
+        "https://ssed.gsfc.nasa.gov/dream/docs/PolarVolatiles_HEOMD_Hurley.pdf"
+      ]
+    }
+  },
+  "instruments": [
+    {
+      "id": "LOLA",
+      "name": "Lunar Orbiter Laser Altimeter",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter",
+      "purpose": "Measure lunar surface topography using laser altimetry.",
+      "measurements": [
+        "Surface elevation",
+        "Terrain slopes",
+        "Surface roughness",
+        "Crater geometry",
+        "Topographic information useful for identifying permanently shadowed regions"
+      ],
+      "science_application": [
+        "Map the lunar south-pole terrain.",
+        "Identify topographic conditions associated with permanent shadow.",
+        "Provide elevation data for illumination analysis."
+      ],
+      "game_mapping": {
+        "mechanics": [
+          "Terrain intelligence",
+          "Polar crater mapping",
+          "Shadow-region identification"
+        ],
+        "science_unlock": "Topographic map of the south-pole region",
+        "player_feedback": "The spacecraft has mapped terrain features that may help explain where sunlight reaches the lunar surface."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-fact-sheet-bdf26a.pdf"
+      ]
+    },
+    {
+      "id": "LAMP",
+      "name": "Lyman-Alpha Mapping Project",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter",
+      "purpose": "Observe the Moon in far-ultraviolet wavelengths and investigate polar surface properties, including possible water frost.",
+      "measurements": [
+        "Far-ultraviolet brightness",
+        "Ultraviolet spectral observations",
+        "Surface frost-related signatures",
+        "Observations of permanently shadowed regions using naturally available ultraviolet illumination"
+      ],
+      "science_application": [
+        "Investigate possible water frost in permanently shadowed regions.",
+        "Study surface properties in regions that are difficult to observe using ordinary sunlight."
+      ],
+      "game_mapping": {
+        "mechanics": [
+          "Ultraviolet science scanning",
+          "Frost-signature investigation",
+          "Permanently shadowed region analysis"
+        ],
+        "science_unlock": "Possible surface frost signature",
+        "player_feedback": "Ultraviolet observations reveal a surface signature that may be consistent with water frost. Additional evidence is needed."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-litho5-shadowed.pdf"
+      ]
+    },
+    {
+      "id": "LEND",
+      "name": "Lunar Exploration Neutron Detector",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter",
+      "purpose": "Measure neutron emissions from the lunar surface and investigate hydrogen distribution.",
+      "measurements": [
+        "Neutron count rates",
+        "Thermal neutron measurements",
+        "Epithermal neutron measurements",
+        "Energetic neutron measurements",
+        "Hydrogen-related spatial variations"
+      ],
+      "science_application": [
+        "Identify regions with enhanced hydrogen signatures.",
+        "Investigate possible water-bearing deposits.",
+        "Contribute information about the lunar neutron and radiation environment."
+      ],
+      "scientific_limitation": "Hydrogen enrichment is indirect evidence. It does not independently establish the exact chemical form, concentration, or accessibility of water.",
+      "game_mapping": {
+        "mechanics": [
+          "Hydrogen anomaly detection",
+          "Neutron science scanning",
+          "Regional resource-prospecting intelligence"
+        ],
+        "science_unlock": "Hydrogen-enriched region",
+        "player_feedback": "Neutron observations indicate enhanced hydrogen in this region. Its chemical form requires further investigation."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-litho5-shadowed.pdf",
+        "https://science.nasa.gov/mission/lunar-prospector/"
+      ]
+    },
+    {
+      "id": "DIVINER",
+      "name": "Diviner Lunar Radiometer Experiment",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter",
+      "purpose": "Map lunar thermal conditions using orbital radiometric measurements.",
+      "measurements": [
+        "Surface temperature",
+        "Thermal emission",
+        "Thermal variations across lunar terrain",
+        "Temperature conditions in permanently shadowed regions"
+      ],
+      "science_application": [
+        "Identify extremely cold regions.",
+        "Investigate possible lunar ice cold traps.",
+        "Understand where surface water ice could remain thermally stable."
+      ],
+      "scientific_limitation": "A sufficiently cold region indicates potentially favorable preservation conditions, not necessarily the presence of water ice.",
+      "game_mapping": {
+        "mechanics": [
+          "Thermal mapping",
+          "Cold-trap identification",
+          "Environmental science analysis"
+        ],
+        "science_unlock": "Potentially ice-stable thermal region",
+        "player_feedback": "Thermal observations identify conditions that could preserve water ice."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170003782.pdf"
+      ]
+    },
+    {
+      "id": "LROC",
+      "name": "Lunar Reconnaissance Orbiter Camera",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter",
+      "purpose": "Capture high-resolution lunar images and investigate surface characteristics.",
+      "measurements": [
+        "Visible-light images",
+        "Ultraviolet and visible multispectral observations",
+        "Surface morphology",
+        "Crater features",
+        "Polar illumination patterns"
+      ],
+      "science_application": [
+        "Map lunar south-pole surface features.",
+        "Observe patterns of sunlight and shadow.",
+        "Provide visual context for interpreting other instrument measurements."
+      ],
+      "game_mapping": {
+        "mechanics": [
+          "Orbital imaging",
+          "Polar region observation",
+          "Science-map generation"
+        ],
+        "science_unlock": "High-resolution polar surface imagery",
+        "player_feedback": "New images provide visual context for the polar region and help interpret other scientific observations."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-fact-sheet-bdf26a.pdf"
+      ]
+    },
+    {
+      "id": "MINI_RF",
+      "name": "Miniature Radio Frequency Instrument",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter as a technology demonstration",
+      "purpose": "Demonstrate synthetic aperture radar techniques and investigate lunar surface and subsurface properties.",
+      "measurements": [
+        "Radar backscatter",
+        "Radar image data",
+        "Polar surface characteristics",
+        "Radar signatures relevant to investigating possible subsurface ice"
+      ],
+      "science_application": [
+        "Investigate radar properties of permanently shadowed regions.",
+        "Search for radar signatures potentially associated with subsurface ice.",
+        "Compare radar observations with thermal and other measurements."
+      ],
+      "scientific_limitation": "Radar signatures can have multiple explanations. A radar anomaly should not automatically be classified as water ice.",
+      "game_mapping": {
+        "mechanics": [
+          "Radar observation",
+          "Subsurface-property investigation",
+          "Cross-instrument evidence comparison"
+        ],
+        "science_unlock": "Radar anomaly requiring interpretation",
+        "player_feedback": "Radar observations reveal an unusual surface or subsurface signature. Its origin remains uncertain."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-fact-sheet-bdf26a.pdf"
+      ]
+    },
+    {
+      "id": "CRATER",
+      "name": "Cosmic Ray Telescope for the Effects of Radiation",
+      "mission_status": "Flown on NASA's Lunar Reconnaissance Orbiter",
+      "purpose": "Characterize the lunar radiation environment and investigate potential biological effects.",
+      "measurements": [
+        "Cosmic-ray radiation measurements",
+        "Linear energy transfer spectra",
+        "Radiation measurements behind shielding-equivalent materials"
+      ],
+      "science_application": [
+        "Characterize radiation conditions around the Moon.",
+        "Improve understanding of radiation exposure in the lunar environment.",
+        "Support radiation-related spacecraft and exploration research."
+      ],
+      "game_mapping": {
+        "mechanics": [
+          "Radiation environment monitoring",
+          "Spacecraft environmental assessment",
+          "Mission-risk information"
+        ],
+        "science_unlock": "Radiation environment report",
+        "player_feedback": "Radiation measurements provide new information about the spacecraft's operating environment."
+      },
+      "classification": "NASA verified instrument and capabilities",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-fact-sheet-bdf26a.pdf"
+      ]
+    }
+  ],
+  "environmental_hazards": [
+    {
+      "id": "POLAR_SHADOWS",
+      "name": "Permanently Shadowed Regions",
+      "verified_nasa_fact": "Some lunar polar crater regions receive little or no direct sunlight and can preserve extremely cold conditions.",
+      "scientific_relevance": "These environments are important candidates for investigating the preservation of lunar water ice.",
+      "orbiter_relevance": "Science observations of these regions require suitable instrument capabilities and observation strategies.",
+      "game_mapping": {
+        "mechanic": "Observation planning",
+        "challenge": "Choose appropriate instruments to investigate shadowed regions.",
+        "game_event": "A target region is identified for additional polar observations."
+      },
+      "source_urls": [
+        "https://science.nasa.gov/moon/moon-water-and-ices/",
+        "https://www.nasa.gov/reference/moonbase-environment/"
+      ]
+    },
+    {
+      "id": "THERMAL_EXTREMES",
+      "name": "Extreme Polar Thermal Conditions",
+      "verified_nasa_fact": "Lunar south-pole regions experience significant thermal differences between illuminated and permanently shadowed terrain.",
+      "scientific_relevance": "Temperature strongly influences the stability of water ice.",
+      "orbiter_relevance": "Thermal observations provide information about the environment being investigated. Spacecraft thermal design is a separate engineering consideration.",
+      "game_mapping": {
+        "mechanic": "Thermal environment analysis",
+        "challenge": "Interpret temperature data and distinguish cold conditions from actual ice detection.",
+        "game_event": "Diviner observations identify a potential cold-trap region."
+      },
+      "source_urls": [
+        "https://www.nasa.gov/reference/moonbase-environment/",
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/"
+      ]
+    },
+    {
+      "id": "POLAR_ILLUMINATION",
+      "name": "Low-Angle and Variable Sunlight",
+      "verified_nasa_fact": "The lunar south pole has unusual lighting conditions, with some elevated regions receiving extended sunlight while nearby terrain remains shadowed.",
+      "scientific_relevance": "Illumination patterns help explain thermal conditions and the distribution of potential cold traps.",
+      "orbiter_relevance": "Optical observation opportunities and illumination interpretation depend on orbital geometry and the observed terrain.",
+      "game_mapping": {
+        "mechanic": "Observation-window planning",
+        "challenge": "Coordinate imaging and thermal observations with the available observation conditions.",
+        "game_event": "A new illumination map changes the priority of science targets."
+      },
+      "source_urls": [
+        "https://www.nasa.gov/reference/moonbase-environment/",
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/"
+      ]
+    },
+    {
+      "id": "RADIATION_ENVIRONMENT",
+      "name": "Lunar Space Radiation",
+      "verified_nasa_fact": "CRaTER was designed to characterize the lunar radiation environment and its potential biological effects.",
+      "scientific_relevance": "Radiation measurements contribute to understanding the space environment around the Moon.",
+      "orbiter_relevance": "Radiation monitoring can inform a spacecraft environmental assessment. Specific spacecraft damage thresholds require separate engineering data.",
+      "game_mapping": {
+        "mechanic": "Radiation monitoring",
+        "challenge": "Interpret environmental measurements and manage mission uncertainty.",
+        "game_event": "A radiation-environment report becomes available."
+      },
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/"
+      ]
+    },
+    {
+      "id": "TERRAIN_SHADOW_UNCERTAINTY",
+      "name": "Incomplete Polar Terrain and Illumination Knowledge",
+      "verified_nasa_fact": "Terrain elevation and surrounding topography influence the illumination received by lunar polar regions.",
+      "scientific_relevance": "Topography and imagery help researchers understand the distribution of permanently shadowed areas.",
+      "orbiter_relevance": "Different observations may provide different levels of detail about the same region.",
+      "game_mapping": {
+        "mechanic": "Progressive science mapping",
+        "challenge": "Combine LOLA and LROC observations to improve regional understanding.",
+        "game_event": "Additional mapping reveals previously unresolved terrain features."
+      },
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-litho5-shadowed.pdf"
+      ]
+    }
+  ],
+  "mission_events": [
+    {
+      "id": "HYDROGEN_ANOMALY",
+      "name": "Unexpected Hydrogen Signature",
+      "type": "Scientific discovery",
+      "scientific_basis": "LEND neutron measurements can identify regions with enhanced hydrogen signatures.",
+      "event_description": "The science team identifies a region with unusual neutron observations.",
+      "player_decision": [
+        "Prioritize additional regional observations.",
+        "Compare the measurements with existing thermal data.",
+        "Request additional independent evidence before classifying the discovery."
+      ],
+      "recommended_instruments": [
+        "LEND",
+        "DIVINER",
+        "LAMP"
+      ],
+      "game_outcome": "A hydrogen-enriched candidate region is added to the science map.",
+      "classification": "NASA-grounded event; game narrative and decisions are illustrative.",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/mission/lunar-prospector/"
+      ]
+    },
+    {
+      "id": "COLD_TRAP_DISCOVERY",
+      "name": "Potential Cold Trap Identified",
+      "type": "Environmental discovery",
+      "scientific_basis": "Diviner measures lunar temperatures, while LOLA provides topographic information useful for identifying permanently shadowed regions.",
+      "event_description": "The science team identifies a polar region with thermal conditions potentially favorable to ice preservation.",
+      "player_decision": [
+        "Prioritize thermal observations.",
+        "Compare the region with existing topographic maps.",
+        "Request ultraviolet observations for additional evidence."
+      ],
+      "recommended_instruments": [
+        "DIVINER",
+        "LOLA",
+        "LAMP"
+      ],
+      "game_outcome": "A potential cold-trap region is added to the mission map.",
+      "classification": "NASA-grounded event; game narrative and decisions are illustrative.",
+      "source_urls": [
+        "https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170003782.pdf",
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/"
+      ]
+    },
+    {
+      "id": "FROST_SIGNATURE",
+      "name": "Possible Surface Frost Signature",
+      "type": "Scientific discovery",
+      "scientific_basis": "LAMP observations can investigate possible water frost in permanently shadowed regions.",
+      "event_description": "Ultraviolet observations reveal a signature that may be consistent with surface frost.",
+      "player_decision": [
+        "Compare the signature with thermal observations.",
+        "Investigate the region using complementary science measurements.",
+        "Keep the finding classified as tentative."
+      ],
+      "recommended_instruments": [
+        "LAMP",
+        "DIVINER",
+        "LEND"
+      ],
+      "game_outcome": "The region receives a possible surface-frost classification.",
+      "classification": "NASA-grounded event; game narrative and decisions are illustrative.",
+      "source_urls": [
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-litho5-shadowed.pdf",
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/"
+      ]
+    },
+    {
+      "id": "RADAR_ANOMALY",
+      "name": "Unusual Radar Return",
+      "type": "Scientific investigation",
+      "scientific_basis": "Mini-RF uses synthetic aperture radar to investigate lunar surface and subsurface properties.",
+      "event_description": "Radar observations reveal an unusual backscatter signature in a polar region.",
+      "player_decision": [
+        "Compare radar observations with available thermal measurements.",
+        "Request additional surface imaging.",
+        "Retain multiple possible explanations for the anomaly."
+      ],
+      "recommended_instruments": [
+        "MINI_RF",
+        "DIVINER",
+        "LROC"
+      ],
+      "game_outcome": "A radar anomaly is recorded for scientific interpretation.",
+      "classification": "NASA-grounded instrument capability; specific event is illustrative.",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-fact-sheet-bdf26a.pdf"
+      ]
+    },
+    {
+      "id": "POLAR_MAP_UPDATE",
+      "name": "Updated South Pole Illumination Map",
+      "type": "Mapping discovery",
+      "scientific_basis": "LOLA topography and LROC imaging help characterize lunar polar illumination and shadow patterns.",
+      "event_description": "New observations improve the science team's understanding of the distribution of illuminated and shadowed terrain.",
+      "player_decision": [
+        "Update the science target priorities.",
+        "Compare newly mapped regions with hydrogen observations.",
+        "Continue observing regions with incomplete data."
+      ],
+      "recommended_instruments": [
+        "LOLA",
+        "LROC",
+        "DIVINER"
+      ],
+      "game_outcome": "The lunar south-pole science map receives an update.",
+      "classification": "NASA-grounded observation capabilities; event timing is illustrative.",
+      "source_urls": [
+        "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
+        "https://science.nasa.gov/wp-content/uploads/2024/01/lro-litho5-shadowed.pdf"
+      ]
+    }
+  ],
+  "science_discovery_rules": {
+    "principle": "No individual instrument automatically confirms an accessible lunar water deposit.",
+    "evidence_categories": [
+      {
+        "category": "Hydrogen evidence",
+        "instrument": "LEND",
+        "interpretation": "Hydrogen enrichment is detected indirectly."
+      },
+      {
+        "category": "Thermal evidence",
+        "instrument": "DIVINER",
+        "interpretation": "Temperature conditions indicate potential ice stability."
+      },
+      {
+        "category": "Ultraviolet evidence",
+        "instrument": "LAMP",
+        "interpretation": "Surface signatures can be consistent with water frost."
+      },
+      {
+        "category": "Radar evidence",
+        "instrument": "MINI_RF",
+        "interpretation": "Radar properties provide additional information about surface and subsurface characteristics."
+      },
+      {
+        "category": "Topographic evidence",
+        "instrument": "LOLA",
+        "interpretation": "Terrain information helps identify permanently shadowed regions."
+      },
+      {
+        "category": "Visual evidence",
+        "instrument": "LROC",
+        "interpretation": "Images provide surface context and illumination information."
+      }
+    ],
+    "game_implementation": {
+      "rule": "Science discoveries should be unlocked through combinations of compatible observations.",
+      "example": {
+        "lEND_result": "Hydrogen enrichment",
+        "diviner_result": "Potentially ice-stable thermal conditions",
+        "lamp_result": "Possible frost signature",
+        "final_game_classification": "Strong multi-instrument evidence for a potential water-ice region"
+      },
+      "important_limitation": "This game classification is not equivalent to direct physical confirmation or a measurement of extractable water."
+    }
+  },
+  "data_integrity": {
+    "verified_nasa_facts": "Instrument identities, measurement purposes, established lunar environmental conditions, and published scientific findings.",
+    "illustrative_game_values": "Any invented numerical parameters, instrument costs, scan durations, probabilities, resource rewards, scoring thresholds, and mission-event frequencies.",
+    "unsupported_numerical_claims": "Excluded from this dataset.",
+    "recommended_implementation": "Keep NASA reference data separate from balancing parameters in the game configuration.",
+    "future_validation": "Check instrument-specific technical documentation before introducing numerical performance specifications."
+  }
+}
